@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Contact Job-Kart for hiring solutions, job applications, and business inquiries. Frequently asked questions about our services." />
+  <title>Job-Kart | Contact Us</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Scroll Progress Bar -->
+  <div class="scroll-progress" id="scrollProgress"></div>
+
+  <!-- Shared Navbar -->
+  <nav class="navbar" id="navbar">
+    <a href="index.html" class="nav-logo">JOB<span class="logo-dot"></span>KART</a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html" id="nav-home" data-nav="home">HOME</a></li>
+      <li><a href="openings.html" id="nav-openings" data-nav="openings">OPEN POSITIONS</a></li>
+      <li><a href="about.html" id="nav-about" data-nav="about">ABOUT US</a></li>
+      <li><a href="contact.html" id="nav-contact" data-nav="contact">CONTACT US</a></li>
+      <li><a href="openings.html" class="nav-cta">Get Started</a></li>
+    </ul>
+    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <main>
+
+    <!-- ========== CONTACT FORM + INFO ========== -->
+    <section id="contact" style="padding-top: 120px;">
+      <div class="contact-wrapper">
+
+        <!-- Left: Contact Info -->
+        <div class="contact-info reveal">
+          <h2>Get In Touch</h2>
+          <p>Whether you're looking for the right talent, the right job, or a digital marketing partner — our team is ready to help.</p>
+
+          <div class="contact-detail">
+            <div class="contact-detail-icon">📍</div>
+            <div class="contact-detail-text">
+              <h4>Office Address</h4>
+              <p>Unit No. 310, Third Floor Royal Arcade, Nirman Rd, Old City, Bhubaneswar, Odisha 751024</p>
+            </div>
+          </div>
+
+          <div class="contact-detail">
+            <div class="contact-detail-icon">📞</div>
+            <div class="contact-detail-text">
+              <h4>Call Us</h4>
+              <a href="tel:+919692364168">+91-96923 64168</a>
+            </div>
+          </div>
+
+          <div class="contact-detail">
+            <div class="contact-detail-icon">📧</div>
+            <div class="contact-detail-text">
+              <h4>Email Us</h4>
+              <a href="mailto:contact@jobkart.in">contact@jobkart.in</a>
+            </div>
+          </div>
+
+          <div class="contact-detail">
+            <div class="contact-detail-icon">🌐</div>
+            <div class="contact-detail-text">
+              <h4>Website</h4>
+              <a href="https://www.job-kart.org" target="_blank" rel="noopener">www.job-kart.org</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Contact Form Card -->
+        <div class="contact-form-card reveal reveal-delay-2">
+          <h3>Send Us a Message</h3>
+
+          <form id="contactForm" data-action="submit-contact">
+            <div class="form-group">
+              <label for="contactName">Your Name</label>
+              <input type="text" name="name" id="contactName" placeholder="Enter your name" required />
+            </div>
+
+            <div class="form-group">
+              <label for="contactEmail">Your Email</label>
+              <input type="email" name="email" id="contactEmail" placeholder="you@example.com" required />
+            </div>
+
+            <div class="form-group">
+              <label for="contactPhone">Phone Number</label>
+              <input type="tel" name="phone" id="contactPhone" placeholder="+91 XXXXX XXXXX" />
+            </div>
+
+            <div class="form-group">
+              <label for="contactService">I'm Interested In...</label>
+              <select name="service" id="contactService">
+                <option value="">Select a service</option>
+                <option value="social-media">Social Media Marketing</option>
+                <option value="website">Website Designing</option>
+                <option value="seo">SEO</option>
+                <option value="paid-ads">Paid Advertising</option>
+                <option value="job">Job Application</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="contactMessage">Your Message</label>
+              <textarea name="message" id="contactMessage" placeholder="Tell us how we can help..." rows="5"></textarea>
+            </div>
+
+            <button type="submit" id="contactSubmitBtn" data-action="submit-contact" class="btn-primary form-submit-btn">Send Message</button>
+          </form>
+
+          <div class="form-success" id="contactSuccess">
+            <span class="success-icon">✉️</span>
+            <h4>Message Sent!</h4>
+            <p>Thank you for reaching out. Our team will respond within 24 hours.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========== FAQ SECTION ========== -->
+    <section id="faq">
+      <h2 class="section-title reveal">Frequently Asked Questions</h2>
+      <p class="section-subtitle reveal reveal-delay-1">Quick answers to common questions about working with Job-Kart.</p>
+      <div class="faq-container">
+
+        <div class="faq-item reveal reveal-delay-2">
+          <button class="faq-question">
+            <span>What is the typical selection process?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Most companies follow a structured process: resume screening, aptitude tests, technical interviews, and HR interviews. The exact steps may vary depending on the role and company.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal reveal-delay-3">
+          <button class="faq-question">
+            <span>What factors affect salary in a job?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Salary depends on multiple factors including experience, skills, job role, the hiring company, and the job location. Industry standards and market demand also play a significant role.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal reveal-delay-4">
+          <button class="faq-question">
+            <span>What skills are most important for getting hired?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Key skills include communication, problem-solving, teamwork, adaptability, and role-specific technical skills. Soft skills are equally important alongside technical expertise.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal reveal-delay-5">
+          <button class="faq-question">
+            <span>Is prior work experience mandatory?</span>
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Not always. Many of our listings welcome freshers. It depends on the job level and responsibilities. Look for the "Freshers Can Apply" badge on listings that are open to entry-level candidates.
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="faq-email-cta reveal">
+        <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem;">Still have a question? Email us and we'll get back to you!</p>
+        <a href="mailto:contact@jobkart.in" class="btn-primary">Send Email</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Shared Footer -->
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="footer-logo">JOB<span class="logo-dot"></span>KART</div>
+        <p class="footer-tagline">Empowering Careers, Simplifying Hiring</p>
+        <div class="social-icons">
+          <a href="#" class="social-icon" aria-label="Instagram" title="Instagram">IG</a>
+          <a href="#" class="social-icon" aria-label="X / Twitter" title="X / Twitter">X</a>
+          <a href="#" class="social-icon" aria-label="LinkedIn" title="LinkedIn">IN</a>
+          <a href="#" class="social-icon" aria-label="Facebook" title="Facebook">FB</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h3>Quick Links</h3>
+        <ul class="footer-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="openings.html">Open Positions</a></li>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h3>Dashboards</h3>
+        <ul class="footer-links">
+          <li><a href="candidate-dashboard.html">Candidate Dashboard</a></li>
+          <li><a href="recruiter-dashboard.html">Recruiter Dashboard</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h3>Contact Info</h3>
+        <div class="footer-contact-item">
+          <span class="footer-contact-icon">📍</span>
+          <span>Unit No. 310, Third Floor Royal Arcade, Nirman Rd, Old City, Bhubaneswar, Odisha 751024</span>
+        </div>
+        <div class="footer-contact-item">
+          <span class="footer-contact-icon">📧</span>
+          <a href="mailto:contact@jobkart.in">contact@jobkart.in</a>
+        </div>
+        <div class="footer-contact-item">
+          <span class="footer-contact-icon">📞</span>
+          <a href="tel:+919692364168">+91-96923 64168</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h3>About Us</h3>
+        <p style="color: rgba(255,255,255,0.55); font-size: 0.88rem; line-height: 1.7;">Job-Kart is a trusted career platform connecting skilled professionals with verified opportunities from India's top companies. We simplify hiring for employers and empower candidates to find roles aligned with their expertise.</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Job-Kart. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

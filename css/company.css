@@ -1,0 +1,863 @@
+/* ============================================================
+   css/company.css — Job-Kart Company Profile Stylesheet
+   ============================================================ */
+
+/* ===== PAGE BASES ===== */
+body.company-page-body {
+  background-color: var(--bg-soft);
+  padding-top: 68px; /* Navbar height compensation */
+}
+
+/* ===== BANNER HERO ===== */
+.company-hero {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  background-color: var(--navy-dark);
+  overflow: hidden;
+}
+
+.company-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.7;
+  display: block;
+}
+
+.company-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 37, 72, 0.9) 0%, rgba(15, 37, 72, 0.1) 100%);
+  pointer-events: none;
+}
+
+/* ===== IDENTITY HEADER ===== */
+.company-header-card {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 5%;
+  position: relative;
+  margin-top: -64px;
+  display: flex;
+  align-items: flex-end;
+  gap: 28px;
+  z-index: 10;
+}
+
+.company-logo-container {
+  width: 130px;
+  height: 130px;
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 8px;
+  box-shadow: var(--shadow);
+  border: 4px solid var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  font-family: var(--font-head);
+  font-size: 2.5rem;
+  color: var(--navy-dark);
+  font-weight: 700;
+}
+
+.company-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.company-header-info {
+  background: var(--white);
+  padding: 24px 32px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-soft);
+  flex-grow: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.company-title-wrap h1 {
+  font-size: 1.8rem;
+  color: var(--navy-dark);
+  margin-bottom: 8px;
+  font-family: var(--font-head);
+  font-weight: normal;
+}
+
+.company-header-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.company-meta-badge {
+  background: var(--bg-soft);
+  color: var(--navy-mid);
+  padding: 5px 14px;
+  border-radius: var(--pill);
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid var(--border-soft);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.company-header-actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.btn-follow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--pill);
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: 2px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.btn-follow:hover {
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.btn-follow.following {
+  background: var(--accent);
+  color: var(--white);
+  border-color: var(--accent);
+}
+
+.btn-follow.following::before {
+  content: '✓';
+  font-weight: 700;
+}
+
+/* ===== BREADCRUMB ===== */
+.company-breadcrumb {
+  max-width: 1200px;
+  margin: 20px auto 16px;
+  padding: 0 5%;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.company-breadcrumb a {
+  color: var(--accent);
+  transition: color var(--transition);
+}
+
+.company-breadcrumb a:hover {
+  color: var(--accent-hover);
+}
+
+/* ===== LAYOUT GRID ===== */
+.company-layout-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 5% 80px;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 32px;
+  align-items: start;
+}
+
+/* ===== SECTIONS / CARDS ===== */
+.company-card {
+  display: block;
+  min-height: auto;
+  scroll-snap-align: none;
+  overflow: visible;
+  background: var(--white);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  border-top: 3px solid var(--accent);
+  box-shadow: var(--shadow-card);
+  padding: 32px;
+  margin-bottom: 28px;
+  transition: box-shadow var(--transition);
+}
+
+.company-card:hover {
+  box-shadow: var(--shadow);
+}
+
+.company-card-title {
+  font-family: var(--font-head);
+  color: var(--navy-dark);
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-soft);
+  font-weight: normal;
+}
+
+.company-about-text {
+  color: var(--text-body);
+  line-height: 1.8;
+  font-size: 0.96rem;
+}
+
+/* ===== MISSION & VISION (MVV) ===== */
+.company-mvv-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.company-mvv-card {
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.company-mvv-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-card);
+}
+
+.company-mvv-icon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.company-mvv-card h4 {
+  color: var(--navy-dark);
+  margin-bottom: 8px;
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+}
+
+.company-mvv-card p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+/* ===== CORE VALUES ===== */
+.company-values-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.company-value-row {
+  display: flex;
+  align-items: center;
+  background: var(--bg-soft);
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  transition: transform var(--transition), border-color var(--transition);
+}
+
+.company-value-row:hover {
+  transform: translateX(8px);
+  border-color: rgba(37, 99, 235, 0.2);
+  background: var(--white);
+}
+
+.company-value-num {
+  width: 32px;
+  height: 32px;
+  background: var(--navy);
+  color: var(--white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.82rem;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.company-value-text {
+  font-weight: 600;
+  color: var(--navy-dark);
+  font-size: 0.92rem;
+}
+
+/* ===== GALLERY ===== */
+.company-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.company-gallery-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  cursor: pointer;
+}
+
+.company-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s var(--ease);
+  display: block;
+}
+
+.company-gallery-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 37, 72, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.company-gallery-overlay span {
+  color: var(--white);
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.company-gallery-item:hover img {
+  transform: scale(1.08);
+}
+
+.company-gallery-item:hover .company-gallery-overlay {
+  opacity: 1;
+}
+
+/* ===== BENEFITS ===== */
+.company-benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.company-benefit-card {
+  text-align: center;
+  padding: 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-soft);
+  background: var(--bg-soft);
+  transition: transform var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.company-benefit-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+  background: var(--white);
+}
+
+.company-benefit-icon {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.company-benefit-card span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--navy-dark);
+}
+
+/* ===== CURRENT OPENINGS ===== */
+.company-jobs-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.company-jobs-grid .featured-job-card {
+  margin-bottom: 0;
+}
+
+/* ===== SIDEBAR STICKY ===== */
+.company-sidebar {
+  position: sticky;
+  top: 88px;
+  height: fit-content;
+}
+
+/* ===== INFO LIST ===== */
+.company-info-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.company-info-row {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 0.9rem;
+  gap: 12px;
+}
+
+.company-info-row:last-child {
+  border-bottom: none;
+}
+
+.company-info-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+}
+
+.company-info-label {
+  color: var(--text-muted);
+  width: 100px;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
+.company-info-val {
+  font-weight: 600;
+  color: var(--navy-dark);
+  flex: 1;
+  text-align: right;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+.company-info-val a {
+  color: var(--accent);
+  transition: color var(--transition);
+}
+
+.company-info-val a:hover {
+  color: var(--accent-hover);
+}
+
+/* ===== STATISTICS BOXES ===== */
+.company-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.company-stat-box {
+  background: var(--bg-soft);
+  padding: 18px 12px;
+  border-radius: var(--radius);
+  text-align: center;
+  border: 1px solid var(--border-soft);
+  transition: transform var(--transition), border-color var(--transition);
+}
+
+.company-stat-box:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+}
+
+.company-stat-num {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.company-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== RATINGS & REVIEWS ===== */
+.company-rating-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.company-rating-big {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  line-height: 1;
+}
+
+.company-rating-stars {
+  color: #f59e0b;
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.company-rating-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.company-rating-bars {
+  margin-bottom: 20px;
+}
+
+.rating-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.rating-bar-row span {
+  flex-shrink: 0;
+}
+
+.rating-bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--border-soft);
+  border-radius: var(--pill);
+  overflow: hidden;
+}
+
+.rating-bar-fill {
+  height: 100%;
+  background: #f59e0b;
+  border-radius: var(--pill);
+  width: 0; /* Animated dynamically */
+}
+
+.company-review-list {
+  border-top: 1px solid var(--border-soft);
+  padding-top: 16px;
+}
+
+.company-review-item {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.company-review-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.company-reviewer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.company-reviewer-name {
+  font-weight: 700;
+  color: var(--navy-dark);
+  font-size: 0.88rem;
+}
+
+.company-reviewer-role {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+.company-review-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.company-review-stars {
+  color: #f59e0b;
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+}
+
+.company-review-text {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-body);
+  line-height: 1.6;
+}
+
+/* ===== SOCIAL LINKS ===== */
+.company-social-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.company-social-pill {
+  padding: 8px 16px;
+  border-radius: var(--pill);
+  background: var(--bg-soft);
+  color: var(--navy);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.8rem;
+  border: 1px solid var(--border-soft);
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.company-social-pill:hover {
+  background: var(--navy);
+  color: var(--white);
+  border-color: var(--navy);
+  transform: translateY(-2px);
+}
+
+/* ===== REVIEW SORT CONTROLS ===== */
+.company-review-sort {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.company-review-sort-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.company-review-sort-select {
+  padding: 6px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--pill);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-body);
+  background: var(--bg-soft);
+  cursor: pointer;
+  transition: border-color var(--transition);
+  appearance: auto;
+}
+
+.company-review-sort-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ===== REVIEW FORM ===== */
+.company-review-form-wrap {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.company-review-form-title {
+  font-family: var(--font-head);
+  color: var(--navy-dark);
+  font-size: 1.1rem;
+  font-weight: normal;
+  margin-bottom: 16px;
+}
+
+.company-review-form .form-group {
+  margin-bottom: 16px;
+}
+
+.company-review-form label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--navy-dark);
+  margin-bottom: 6px;
+}
+
+.company-review-form input[type="text"],
+.company-review-form textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  color: var(--text-dark);
+  background: var(--white);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  resize: vertical;
+}
+
+.company-review-form input[type="text"]:focus,
+.company-review-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.company-review-form textarea {
+  min-height: 80px;
+}
+
+/* Star Rating Input */
+.company-review-star-input {
+  display: flex;
+  gap: 4px;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--border);
+  cursor: pointer;
+  padding: 2px;
+  line-height: 1;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.star-btn:hover {
+  transform: scale(1.15);
+}
+
+.star-btn.star-active {
+  color: #f59e0b;
+}
+
+.company-review-submit-btn {
+  width: 100%;
+  padding: 12px 24px;
+  font-size: 0.9rem;
+}
+
+/* User-submitted review badge */
+.company-review-badge {
+  display: inline-block;
+  background: #DBEAFE;
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--pill);
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}
+
+/* ===== RESPONSIVE BREAKPOINTS ===== */
+@media (max-width: 1024px) {
+  .company-layout-container {
+    grid-template-columns: 1fr;
+  }
+  .company-sidebar {
+    position: static;
+  }
+  .company-mvv-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .company-benefits-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .company-hero {
+    height: 200px;
+  }
+  .company-header-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-top: -50px;
+  }
+  .company-logo-container {
+    width: 110px;
+    height: 110px;
+  }
+  .company-header-info {
+    width: 100%;
+    flex-direction: column;
+    padding: 24px;
+    gap: 16px;
+  }
+  .company-header-meta {
+    justify-content: center;
+  }
+  .company-header-actions {
+    width: 100%;
+    justify-content: center;
+  }
+  .company-mvv-grid {
+    grid-template-columns: 1fr;
+  }
+  .company-gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .company-benefits-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .company-info-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 10px 0;
+  }
+  .company-info-label {
+    width: auto;
+    margin-bottom: 2px;
+  }
+  .company-info-val {
+    text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  .company-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+  .company-benefits-grid {
+    grid-template-columns: 1fr;
+  }
+  .company-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .company-header-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .company-header-actions a,
+  .company-header-actions button {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+  .company-rating-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+}

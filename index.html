@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Job-Kart — Start Your Career With The Right Opportunity. Explore verified job opportunities from top companies. Connect with trusted employers." />
+  <title>Job-Kart | Trusted Career Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Scroll Progress Bar -->
+  <div class="scroll-progress" id="scrollProgress"></div>
+
+  <!-- Shared Navbar -->
+  <nav class="navbar" id="navbar">
+    <a href="index.html" class="nav-logo">JOB<span class="logo-dot"></span>KART</a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html" id="nav-home" data-nav="home">HOME</a></li>
+      <li><a href="openings.html" id="nav-openings" data-nav="openings">OPEN POSITIONS</a></li>
+      <li><a href="about.html" id="nav-about" data-nav="about">ABOUT US</a></li>
+      <li><a href="contact.html" id="nav-contact" data-nav="contact">CONTACT US</a></li>
+      <li><a href="openings.html" class="nav-cta">Get Started</a></li>
+    </ul>
+    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <main>
+
+    <!-- ========== HERO SECTION (with photo) ========== -->
+    <section id="hero">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <span class="hero-label reveal">Trusted Career Platform</span>
+          <h1 class="reveal reveal-delay-1">Start Your Career With The Right Opportunity</h1>
+          <p class="reveal reveal-delay-2">Explore verified job opportunities from top companies. Connect with trusted employers and unlock your potential.</p>
+          <div class="hero-buttons reveal reveal-delay-3">
+            <a href="openings.html" class="btn-hero-primary">View Openings</a>
+            <a href="about.html" class="btn-hero-outline">Learn More</a>
+          </div>
+        </div>
+        <div class="hero-visual reveal reveal-delay-3">
+          <!-- Decorative background rings (kept, now behind the photo) -->
+          <svg class="hero-visual-bg" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="200" cy="200" r="180" stroke="rgba(91,155,245,0.2)" stroke-width="1"/>
+            <circle cx="200" cy="200" r="140" stroke="rgba(91,155,245,0.15)" stroke-width="1"/>
+            <line x1="20" y1="200" x2="380" y2="200" stroke="rgba(91,155,245,0.08)" stroke-width="0.5"/>
+            <line x1="200" y1="20" x2="200" y2="380" stroke="rgba(91,155,245,0.08)" stroke-width="0.5"/>
+          </svg>
+
+          <!-- Real photo card -->
+          <div class="hero-photo-card">
+            <img
+              src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=600&h=720&fit=crop&q=80"
+              alt="Professional reviewing job opportunities"
+              class="hero-photo"
+              loading="eager"
+            />
+            <!-- Floating stat chip over the photo -->
+            <div class="hero-photo-badge">
+              <span class="hero-photo-badge-num">1,500+</span>
+              <span class="hero-photo-badge-text">Placements Made</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-stats-strip">
+        <div class="hero-stats reveal">
+          <div class="stat-item">
+            <span class="stat-number" data-target="500">0</span>
+            <span class="stat-label">Jobs Posted</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="10000">0</span>
+            <span class="stat-label">Candidates Registered</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="200">0</span>
+            <span class="stat-label">Partner Companies</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="1500">0</span>
+            <span class="stat-label">Successful Placements</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== ABOUT SECTION ========== -->
+    <section id="about">
+      <div class="about-wrapper">
+        <div class="about-text">
+          <h2 class="reveal">We Connect Talent With<br>The Right Opportunities</h2>
+          <p class="reveal reveal-delay-1">Helping job seekers build meaningful careers by connecting them with the right opportunities, while enabling companies to hire top talent quickly, efficiently, and seamlessly.</p>
+          <ul class="about-checklist reveal reveal-delay-2">
+            <li><span class="check-icon">&#10003;</span> Verified Employers Only</li>
+            <li><span class="check-icon">&#10003;</span> Fast, Personalized Matching</li>
+            <li><span class="check-icon">&#10003;</span> Free For Job Seekers</li>
+          </ul>
+          <a href="about.html" class="btn-outline reveal reveal-delay-3">Learn More</a>
+        </div>
+        <div class="about-visual reveal reveal-delay-3">
+          <div class="about-graphic">
+            <img
+              src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=640&h=640&fit=crop&q=80"
+              alt="Team collaborating in a modern office"
+              class="about-photo"
+              loading="lazy"
+            />
+            <div class="badge-floating">
+              <span class="badge-num">98%</span>
+              <span class="badge-text">Client Satisfaction</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== HOW IT WORKS ========== -->
+    <section id="how-it-works">
+      <div class="section-head">
+        <h2 class="section-title reveal">How Job-Kart Works</h2>
+        <p class="section-subtitle reveal reveal-delay-1">Three simple steps between you and your next opportunity.</p>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card reveal reveal-delay-1">
+          <span class="step-number">01</span>
+          <h3>Create Your Profile</h3>
+          <p>Sign up and build a profile that highlights your skills, experience, and career goals.</p>
+        </div>
+        <div class="step-connector reveal reveal-delay-2"></div>
+        <div class="step-card reveal reveal-delay-2">
+          <span class="step-number">02</span>
+          <h3>Get Matched</h3>
+          <p>Our platform connects you with verified employers actively hiring for roles that fit you.</p>
+        </div>
+        <div class="step-connector reveal reveal-delay-3"></div>
+        <div class="step-card reveal reveal-delay-3">
+          <span class="step-number">03</span>
+          <h3>Land The Job</h3>
+          <p>Apply directly, hear back faster, and start your next chapter with confidence.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== FEATURED JOB OPENINGS ========== -->
+    <section id="featured-jobs">
+      <div class="section-head">
+        <h2 class="section-title reveal">Featured Openings</h2>
+        <p class="section-subtitle reveal reveal-delay-1">A snapshot of current opportunities from our partner companies.</p>
+      </div>
+      <div class="featured-jobs-grid">
+        <div class="featured-job-card reveal reveal-delay-1" data-job-id="telecaller-leadjen">
+          <button class="job-save-btn job-save-btn--icon-only" data-save-job data-job-id="telecaller-leadjen" data-job-title="Telecaller" aria-label="Save this job" aria-pressed="false">
+            <svg class="job-save-btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 3a2 2 0 0 0-2 2v16l8-5 8 5V5a2 2 0 0 0-2-2H6z" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+            <span class="job-save-btn-label">Save</span>
+          </button>
+          <div class="featured-job-top">
+            <span class="job-type-badge">Full-Time</span>
+            <span class="fresher-badge">Freshers Can Apply</span>
+          </div>
+          <h3>Telecaller</h3>
+          <p class="featured-job-company"><a href="company.html?id=leadjen" style="color:inherit; text-decoration:none;">Leadjen Media</a> &middot; Bhubaneswar, Odisha</p>
+          <ul class="featured-job-meta">
+            <li>&#128188; 0&ndash;1 Years</li>
+            <li>&#8377; 12,000&ndash;18,000 / mo</li>
+          </ul>
+          <a href="job-details.html?job=telecaller-leadjen" class="btn-outline featured-job-btn">View Details</a>
+        </div>
+        <div class="featured-job-card reveal reveal-delay-2" data-job-id="marketing-executive-leadjen">
+          <button class="job-save-btn job-save-btn--icon-only" data-save-job data-job-id="marketing-executive-leadjen" data-job-title="Marketing Executive" aria-label="Save this job" aria-pressed="false">
+            <svg class="job-save-btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 3a2 2 0 0 0-2 2v16l8-5 8 5V5a2 2 0 0 0-2-2H6z" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+            <span class="job-save-btn-label">Save</span>
+          </button>
+          <div class="featured-job-top">
+            <span class="job-type-badge">Full-Time</span>
+            <span class="fresher-badge">Freshers Can Apply</span>
+          </div>
+          <h3>Marketing Executive</h3>
+          <p class="featured-job-company"><a href="company.html?id=leadjen" style="color:inherit; text-decoration:none;">Leadjen Media</a> &middot; Bhubaneswar, Odisha</p>
+          <ul class="featured-job-meta">
+            <li>&#128188; 0&ndash;2 Years</li>
+            <li>&#8377; 15,000&ndash;22,000 / mo</li>
+          </ul>
+          <a href="job-details.html?job=marketing-executive-leadjen" class="btn-outline featured-job-btn">View Details</a>
+        </div>
+        <div class="featured-job-card reveal reveal-delay-3" data-job-id="digital-marketing-executive-leadjen">
+          <button class="job-save-btn job-save-btn--icon-only" data-save-job data-job-id="digital-marketing-executive-leadjen" data-job-title="Digital Marketing Executive" aria-label="Save this job" aria-pressed="false">
+            <svg class="job-save-btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 3a2 2 0 0 0-2 2v16l8-5 8 5V5a2 2 0 0 0-2-2H6z" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+            <span class="job-save-btn-label">Save</span>
+          </button>
+          <div class="featured-job-top">
+            <span class="job-type-badge">Full-Time</span>
+          </div>
+          <h3>Digital Marketing Executive</h3>
+          <p class="featured-job-company"><a href="company.html?id=leadjen" style="color:inherit; text-decoration:none;">Leadjen Media</a> &middot; Bhubaneswar, Odisha</p>
+          <ul class="featured-job-meta">
+            <li>&#128188; 1&ndash;3 Years</li>
+            <li>&#8377; 18,000&ndash;28,000 / mo</li>
+          </ul>
+          <a href="job-details.html?job=digital-marketing-executive-leadjen" class="btn-outline featured-job-btn">View Details</a>
+        </div>
+      </div>
+      <div class="openings-cta reveal reveal-delay-3">
+        <a href="openings.html" class="btn-primary">View All Openings</a>
+      </div>
+    </section>
+
+    <!-- ========== WHY CHOOSE US ========== -->
+    <section id="why-us">
+      <div class="section-head">
+        <h2 class="section-title reveal">Why Choose Job-Kart</h2>
+        <p class="section-subtitle reveal reveal-delay-1">Built to make hiring and job hunting simple, transparent, and fast.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card reveal reveal-delay-1">
+          <span class="feature-icon">&#10003;</span>
+          <h3>Verified Listings</h3>
+          <p>Every job is reviewed before it goes live, so you never waste time on fake postings.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-2">
+          <span class="feature-icon">&#9889;</span>
+          <h3>Fast Matching</h3>
+          <p>Get connected to relevant roles quickly with profile-based recommendations.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-3">
+          <span class="feature-icon">&#128274;</span>
+          <h3>Trusted & Secure</h3>
+          <p>Your data stays private — we never share your details without consent.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-4">
+          <span class="feature-icon">&#128176;</span>
+          <h3>Free For Candidates</h3>
+          <p>Job-Kart is completely free for job seekers from sign-up to placement.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== PARTNER TICKER ========== -->
+    <section class="ticker-section">
+      <div class="ticker-container">
+        <div class="ticker-track" id="tickerTrack">
+          <a href="company.html?id=leadjen" class="ticker-item">Leadjen Media</a><span class="ticker-separator">&#9670;</span>
+          <a href="company.html?id=algopage" class="ticker-item">Algopage</a><span class="ticker-separator">&#9670;</span>
+          <a href="company.html?id=northstar" class="ticker-item">NorthStar Solutions</a><span class="ticker-separator">&#9670;</span>
+          <a href="company.html?id=bluepoint" class="ticker-item">Bluepoint Digital</a><span class="ticker-separator">&#9670;</span>
+          <a href="company.html?id=vertex" class="ticker-item">Vertex Outsourcing</a><span class="ticker-separator">&#9670;</span>
+          <a href="company.html?id=coastline" class="ticker-item">Coastline Tech</a><span class="ticker-separator">&#9670;</span>
+          <!-- duplicated for seamless loop -->
+          <a href="company.html?id=leadjen" class="ticker-item">Leadjen Media</a><span class="ticker-separator">&#9670;</span>
+          <a href="company.html?id=algopage" class="ticker-item">Algopage</a><span class="ticker-separator">&#9670;</span>
+          <a href="company.html?id=northstar" class="ticker-item">NorthStar Solutions</a><span class="ticker-separator">&#9670;</span>
+          <a href="company.html?id=bluepoint" class="ticker-item">Bluepoint Digital</a><span class="ticker-separator">&#9670;</span>
+          <a href="company.html?id=vertex" class="ticker-item">Vertex Outsourcing</a><span class="ticker-separator">&#9670;</span>
+          <a href="company.html?id=coastline" class="ticker-item">Coastline Tech</a><span class="ticker-separator">&#9670;</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== TESTIMONIALS ========== -->
+    <section id="testimonials">
+      <div class="section-head">
+        <h2 class="section-title reveal">What People Are Saying</h2>
+        <p class="section-subtitle reveal reveal-delay-1">Real outcomes from candidates and employers on Job-Kart.</p>
+      </div>
+      <div class="testimonials-grid">
+        <div class="testimonial-card reveal reveal-delay-1">
+          <p class="testimonial-quote">"I applied through Job-Kart and got a response within three days. The whole process felt transparent from start to finish."</p>
+          <div class="testimonial-author">
+            <img src="https://i.pravatar.cc/150?img=47" alt="Priya Sahoo" class="testimonial-avatar-photo" loading="lazy" />
+            <div>
+              <h4>Priya Sahoo</h4>
+              <span>Marketing Executive, Bhubaneswar</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal reveal-delay-2">
+          <p class="testimonial-quote">"As a fresher, I was worried about getting noticed. Job-Kart's listings were clear about what 'freshers welcome' actually meant."</p>
+          <div class="testimonial-author">
+            <img src="https://i.pravatar.cc/150?img=68" alt="Rohit Kumar" class="testimonial-avatar-photo" loading="lazy" />
+            <div>
+              <h4>Rohit Kumar</h4>
+              <span>Telecaller, Cuttack</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal reveal-delay-3">
+          <p class="testimonial-quote">"We filled two open roles in under two weeks. The candidate quality coming through Job-Kart has been consistently strong."</p>
+          <div class="testimonial-author">
+            <img src="https://i.pravatar.cc/150?img=45" alt="Anita Mishra" class="testimonial-avatar-photo" loading="lazy" />
+            <div>
+              <h4>Anita Mishra</h4>
+              <span>HR Lead, Partner Company</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== CTA BANNER ========== -->
+    <section class="cta-banner-section">
+      <div class="cta-banner reveal">
+        <h2>Ready To Find Your Next Opportunity?</h2>
+        <p>Join thousands of candidates who've found meaningful careers through Job-Kart.</p>
+        <div class="cta-banner-buttons">
+          <a href="openings.html" class="btn-hero-primary">Browse Openings</a>
+          <a href="contact.html" class="btn-hero-outline">Contact Us</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Shared Footer -->
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="footer-logo">JOB<span class="logo-dot"></span>KART</div>
+        <p class="footer-tagline">Empowering Careers, Simplifying Hiring</p>
+        <div class="social-icons">
+          <a href="#" class="social-icon" aria-label="Instagram" title="Instagram">IG</a>
+          <a href="#" class="social-icon" aria-label="X / Twitter" title="X / Twitter">X</a>
+          <a href="#" class="social-icon" aria-label="LinkedIn" title="LinkedIn">IN</a>
+          <a href="#" class="social-icon" aria-label="Facebook" title="Facebook">FB</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h3>Quick Links</h3>
+        <ul class="footer-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="openings.html">Open Positions</a></li>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h3>Dashboards</h3>
+        <ul class="footer-links">
+          <li><a href="candidate-dashboard.html">Candidate Dashboard</a></li>
+          <li><a href="recruiter-dashboard.html">Recruiter Dashboard</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h3>Contact Info</h3>
+        <div class="footer-contact-item">
+          <span class="footer-contact-icon">📍</span>
+          <span>Unit No. 310, Third Floor Royal Arcade, Nirman Rd, Old City, Bhubaneswar, Odisha 751024</span>
+        </div>
+        <div class="footer-contact-item">
+          <span class="footer-contact-icon">📧</span>
+          <a href="mailto:contact@jobkart.in">contact@jobkart.in</a>
+        </div>
+        <div class="footer-contact-item">
+          <span class="footer-contact-icon">📞</span>
+          <a href="tel:+919692364168">+91-96923 64168</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h3>About Us</h3>
+        <p style="color: rgba(255,255,255,0.55); font-size: 0.88rem; line-height: 1.7;">Job-Kart is a trusted career platform connecting skilled professionals with verified opportunities from India's top companies. We simplify hiring for employers and empower candidates to find roles aligned with their expertise.</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Job-Kart. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+
+  <section class="company-id-section">
+    <div class="company-id-card">
+        <h2>Company Portal</h2>
+        <p>Enter your Company ID to access your recruiter dashboard.</p>
+
+        <form>
+            <input type="text" placeholder="Enter Company ID" required>
+            <button type="submit">Continue</button>
+        </form>
+    </div>
+</section>
+</body>
+</html>
