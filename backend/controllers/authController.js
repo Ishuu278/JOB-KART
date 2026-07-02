@@ -3,7 +3,12 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    console.error('JWT_SECRET is not set! Check your .env file.');
+    throw new Error('JWT_SECRET is not configured');
+  }
+  return jwt.sign({ id }, secret, { expiresIn: '30d' });
 };
 
 exports.register = async (req, res) => {
