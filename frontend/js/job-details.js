@@ -177,31 +177,163 @@
 
   // Load and Render Page content
   function initJobDetailsPage() {
-    var jobId = getQueryParam('job') || getQueryParam('id') || '101'; // Default to 101 (TechNova Senior Frontend Dev)
-    var result = findJobAndCompany(jobId);
+    var jobId = getQueryParam('job') || getQueryParam('id') || '101';
 
-    if (!result) {
-      document.querySelector('main').innerHTML = `
-        <div class="breadcrumbs-container" style="max-width: 1200px; margin: 20px auto; padding: 0 40px;">
-          <ul class="breadcrumbs">
-            <li><a href="index.html">Home</a></li>
-            <li><i class="fas fa-chevron-right"></i></li>
-            <li><a href="openings.html">Openings</a></li>
-            <li><i class="fas fa-chevron-right"></i></li>
-            <li class="current">Job Not Found</li>
-          </ul>
-        </div>
-        <section class="card" style="max-width: 800px; margin: 40px auto; padding: 40px; text-align: center;">
-          <h2>Job Posting Not Found</h2>
-          <p style="color: var(--text-muted); margin: 16px 0 24px;">The job vacancy ID is invalid or has expired.</p>
-          <a href="openings.html" class="btn-primary">Browse Open Positions</a>
-        </section>
-      `;
-      return;
+    // Try API first
+    if (typeof api !== 'undefined') {
+      api.get('/jobs/' + jobId)
+        .then(function(data) {
+          renderJobFromAPI(data);
+        })
+        .catch(function() {
+          // Fallback to local data
+          var result = findJobAndCompany(jobId);
+          if (result) {
+            renderJobFromLocal(result.job, result.company);
+          } else {
+            renderJobNotFound();
+          }
+        });
+    } else {
+      var result = findJobAndCompany(jobId);
+      if (result) {
+        renderJobFromLocal(result.job, result.company);
+      } else {
+        renderJobNotFound();
+      }
+    }
+  }
+
+  function renderJobNotFound() {
+    document.querySelector('main').innerHTML = `
+      <div class="breadcrumbs-container" style="max-width: 1200px; margin: 20px auto; padding: 0 40px;">
+        <ul class="breadcrumbs">
+          <li><a href="index.html">Home</a></li>
+          <li><i class="fas fa-chevron-right"></i></li>
+          <li><a href="openings.html">Openings</a></li>
+          <li><i class="fas fa-chevron-right"></i></li>
+          <li class="current">Job Not Found</li>
+        </ul>
+      </div>
+      <section class="card" style="max-width: 800px; margin: 40px auto; padding: 40px; text-align: center;">
+        <h2>Job Posting Not Found</h2>
+        <p style="color: var(--text-muted); margin: 16px 0 24px;">The job vacancy ID is invalid or has expired.</p>
+        <a href="openings.html" class="btn-primary">Browse Open Positions</a>
+      </section>
+    `;
+  }
+
+  function renderJobFromAPI(data) {
+    var job = data;
+    var company = data.companyId;
+
+    document.title = job.title + ' at ' + company.name + ' | Job-Kart';
+
+    var bcJobTitle = document.getElementById('bc-job-title');
+    if (bcJobTitle) bcJobTitle.textContent = job.title;
+
+    var bannerImg = document.getElementById('banner-img');
+    if (bannerImg) bannerImg.src = company.cover || '';
+
+    var companyLogo = document.getElementById('company-logo');
+    if (companyLogo) companyLogo.src = company.logo || '';
+
+    var jobTitle = document.getElementById('job-title');
+    if (jobTitle) jobTitle.textContent = job.title;
+
+    var companyName = document.getElementById('company-name');
+    if (companyName) {
+      companyName.innerHTML = '<a href="company.html?id=' + company._id + '" style="color:inherit; text-decoration:none;">' + company.name + '</a>';
     }
 
-    var job = result.job;
-    var company = result.company;
+    var jobLocation = document.getElementById('job-location');
+    if (jobLocation) jobLocation.textContent = job.location || company.hq || '';
+
+    var jobType = document.getElementById('job-type');
+    if (jobType) jobType.textContent = job.type;
+
+    var jobSalary = document.getElementById('job-salary');
+    if (jobSalary) jobSalary.textContent = job.sal || '';
+
+    var jobExperience = document.getElementById('job-experience');
+    if (jobExperience) jobExperience.textContent = job.exp || '';
+
+    var jobDesc = document.getElementById('job-description');
+    if (jobDesc) jobDesc.textContent = job.description || '';
+
+    var jobRespList = document.getElementById('job-responsibilities');
+    if (jobRespList && job.responsibilities) {
+      jobRespList.innerHTML = '';
+      job.responsibilities.forEach(function(resp) {
+        var li = document.createElement('li');
+        li.textContent = resp;
+        jobRespList.appendChild(li);
+      });
+    }
+
+    var jobSkillsDiv = document.getElementById('job-skills');
+    if (jobSkillsDiv && job.skills) {
+      jobSkillsDiv.innerHTML = '';
+      job.skills.forEach(function(skill) {
+        var span = document.createElement('span');
+        span.className = 'skill-badge';
+        span.textContent = skill;
+        jobSkillsDiv.appendChild(span);
+      });
+    }
+
+    var jobBenefitsList = document.getElementById('job-benefits');
+    if (jobBenefitsList && job.benefits) {
+      jobBenefitsList.innerHTML = '';
+      job.benefits.forEach(function(ben) {
+        var li = document.createElement('li');
+        li.textContent = ben;
+        jobBenefitsList.appendChild(li);
+      });
+    }
+
+    var companyOverview = document.getElementById('company-overview');
+    if (companyOverview) companyOverview.textContent = company.about || '';
+
+    var postedDate = document.getElementById('posted-date');
+    if (postedDate) postedDate.textContent = job.postedDate ? new Date(job.postedDate).toLocaleDateString() : 'Recent';
+
+    var applyBefore = document.getElementById('apply-before') || document.getElementById('applyBefore');
+    if (applyBefore) applyBefore.textContent = job.applyBefore ? new Date(job.applyBefore).toLocaleDateString() : 'N/A';
+
+    var profileLink = document.querySelector('.company-info-card a.link-navy');
+    if (profileLink) {
+      profileLink.href = 'company.html?id=' + company._id;
+    }
+
+    localStorage.setItem('selectedJobId', job._id);
+
+    var similarList = document.getElementById('similar-jobs-list');
+    if (similarList) {
+      api.get('/jobs?company=' + company._id).then(function(jobs) {
+        similarList.innerHTML = '';
+        var similar = jobs.filter(function(j) { return j._id !== job._id; }).slice(0, 3);
+        similar.forEach(function(sim) {
+          var simEl = document.createElement('a');
+          simEl.href = 'job-details.html?id=' + sim._id;
+          simEl.className = 'similar-job-link';
+          simEl.innerHTML = '<span>' + sim.title + '</span>';
+          similarList.appendChild(simEl);
+        });
+        if (similar.length === 0) {
+          similarList.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem;">No similar jobs found.</p>';
+        }
+      });
+    }
+
+    var saveBtn = document.querySelector('.btn-save');
+    if (saveBtn) {
+      updateSaveButton(saveBtn, isJobSaved(job._id));
+      saveBtn.onclick = function() { toggleSaveJob(job._id, job.title, saveBtn); };
+    }
+  }
+
+  function renderJobFromLocal(job, company) {
 
     // Breadcrumb
     var bcJobTitle = document.getElementById('bc-job-title');

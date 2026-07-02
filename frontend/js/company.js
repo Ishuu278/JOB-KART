@@ -309,44 +309,336 @@
   // Render company profile info
   function renderCompanyProfile() {
     var companyId = getQueryParam('id') || getQueryParam('company') || 'leadjen';
-    var data = window.COMPANIES_DATA[companyId];
 
-    if (!data) {
-      document.querySelector('main').innerHTML = `
-        <section class="company-card" style="max-width: 600px; margin: 40px auto; text-align: center;">
-          <h2>Company Not Found</h2>
-          <p style="color: var(--text-muted); margin: 16px 0 24px;">The company profile you are trying to view does not exist.</p>
-          <a href="index.html" class="btn-primary">Return Home</a>
-        </section>
-      `;
-      return;
+    // Try API first
+    if (typeof api !== 'undefined') {
+      api.get('/companies/' + companyId)
+        .then(function(data) {
+          api.get('/companies/' + companyId + '/jobs').then(function(jobs) {
+            renderCompanyFromAPI(data, jobs);
+          });
+        })
+        .catch(function() {
+          // Fallback to local data
+          var localData = window.COMPANIES_DATA ? window.COMPANIES_DATA[companyId] : null;
+          if (localData) {
+            renderCompanyFromLocal(localData);
+          } else {
+            renderCompanyNotFound();
+          }
+        });
+    } else {
+      var localData = window.COMPANIES_DATA ? window.COMPANIES_DATA[companyId] : null;
+      if (localData) {
+        renderCompanyFromLocal(localData);
+      } else {
+        renderCompanyNotFound();
+      }
+    }
+  }
+
+  function renderCompanyNotFound() {
+    document.querySelector('main').innerHTML = `
+      <section class="company-card" style="max-width: 600px; margin: 40px auto; text-align: center;">
+        <h2>Company Not Found</h2>
+        <p style="color: var(--text-muted); margin: 16px 0 24px;">The company profile you are trying to view does not exist.</p>
+        <a href="index.html" class="btn-primary">Return Home</a>
+      </section>
+    `;
+  }
+
+  function renderCompanyFromAPI(data, jobs) {
+    var company = data;
+
+    document.title = company.name + ' | Company Profile | Job-Kart';
+
+    var breadcrumbCurrent = document.getElementById('cBreadcrumbCurrent');
+    if (breadcrumbCurrent) breadcrumbCurrent.textContent = company.name;
+
+    var industryEl = document.getElementById('cIndustry');
+    if (industryEl) industryEl.innerHTML = '💼 ' + (company.industry || '');
+
+    var locationEl = document.getElementById('cLocation');
+    if (locationEl) locationEl.innerHTML = '📍 ' + (company.hq || '');
+
+    var websiteBtn = document.getElementById('cWebsiteBtn');
+    if (websiteBtn && company.website) {
+      websiteBtn.href = company.website.indexOf('http') === 0 ? company.website : 'https://' + company.website;
     }
 
-    // Page title
-    document.title = data.name + ' | Company Profile | Job-Kart';
-
-    // Cover Image
     var coverEl = document.getElementById('cCover');
-    if (coverEl) coverEl.src = data.cover;
+    if (coverEl) coverEl.src = company.cover || '';
 
-    // Logo (Support Image or text fallback)
     var logoContainer = document.getElementById('cLogoContainer');
     if (logoContainer) {
       logoContainer.innerHTML = '';
-      if (data.logo && data.logo.indexOf('http') === 0) {
+      if (company.logo && company.logo.indexOf('http') === 0) {
         var img = document.createElement('img');
-        img.src = data.logo;
-        img.alt = data.name;
+        img.src = company.logo;
+        img.alt = company.name;
         img.className = 'company-logo-img';
         logoContainer.appendChild(img);
       } else {
-        logoContainer.textContent = data.logoText || 'CO';
+        logoContainer.textContent = company.logoText || 'CO';
       }
     }
 
-    // Name & Title Headers
     var nameEl = document.getElementById('cName');
-    if (nameEl) nameEl.textContent = data.name;
+    if (nameEl) nameEl.textContent = company.name;
+
+    var aboutEl = document.getElementById('cAbout');
+    if (aboutEl) aboutEl.textContent = company.about || '';
+
+    var missionEl = document.getElementById('cMission');
+    if (missionEl) missionEl.textContent = company.mission || '';
+
+    var visionEl = document.getElementById('cVision');
+    if (visionEl) visionEl.textContent = company.vision || '';
+
+    // MVV cards
+    var mvvGrid = document.getElementById('cMVV');
+    if (mvvGrid && company.mvv) {
+      mvvGrid.innerHTML = '';
+      company.mvv.forEach(function(item) {
+        var card = document.createElement('div');
+        card.className = 'company-mvv-card';
+        card.innerHTML = '<span class="company-mvv-icon">' + item.icon + '</span><h4>' + item.label + '</h4><p>' + item.desc + '</p>';
+        mvvGrid.appendChild(card);
+      });
+    }
+
+    // Core Values
+    var valuesList = document.getElementById('cCoreValues');
+    if (valuesList && company.coreValues) {
+      valuesList.innerHTML = '';
+      company.coreValues.forEach(function(val, idx) {
+        var numStr = String(idx + 1).padStart(2, '0');
+        var row = document.createElement('div');
+        row.className = 'company-value-row';
+        row.innerHTML = '<div class="company-value-num">' + numStr + '</div><div class="company-value-text">' + val + '</div>';
+        valuesList.appendChild(row);
+      });
+    }
+
+    // Gallery
+    var galleryGrid = document.getElementById('cGallery');
+    if (galleryGrid && company.gallery) {
+      galleryGrid.innerHTML = '';
+      company.gallery.forEach(function(photo) {
+        var item = document.createElement('div');
+        item.className = 'company-gallery-item';
+        item.innerHTML = '<img src="' + photo.url + '" alt="' + photo.label + '" loading="lazy" /><div class="company-gallery-overlay"><span>' + photo.label + '</span></div>';
+        galleryGrid.appendChild(item);
+      });
+    }
+
+    // Benefits
+    var benefitsGrid = document.getElementById('cBenefits');
+    if (benefitsGrid && company.benefits) {
+      benefitsGrid.innerHTML = '';
+      company.benefits.forEach(function(b) {
+        var card = document.createElement('div');
+        card.className = 'company-benefit-card';
+        card.innerHTML = '<span class="company-benefit-icon">' + b.icon + '</span><span>' + b.label + '</span>';
+        benefitsGrid.appendChild(card);
+      });
+    }
+
+    // Sidebar Info
+    var sidebarIndustry = document.getElementById('cSidebarIndustry');
+    if (sidebarIndustry) sidebarIndustry.textContent = company.industry || '';
+    var sidebarHQ = document.getElementById('cSidebarHQ');
+    if (sidebarHQ) sidebarHQ.textContent = company.hq || '';
+    var sidebarSize = document.getElementById('cSidebarSize');
+    if (sidebarSize) sidebarSize.textContent = company.size || '';
+    var sidebarFounded = document.getElementById('cSidebarFounded');
+    if (sidebarFounded) sidebarFounded.textContent = company.founded || '';
+    var sidebarWebsite = document.getElementById('cSidebarWebsite');
+    if (sidebarWebsite) {
+      var url = (company.website || '').indexOf('http') === 0 ? company.website : 'https://' + (company.website || '');
+      sidebarWebsite.innerHTML = '<a href="' + url + '" target="_blank">' + (company.website || '') + '</a>';
+    }
+    var sidebarEmail = document.getElementById('cSidebarEmail');
+    if (sidebarEmail) sidebarEmail.innerHTML = '<a href="mailto:' + (company.email || '') + '">' + (company.email || '') + '</a>';
+    var sidebarType = document.getElementById('cSidebarType');
+    if (sidebarType) sidebarType.textContent = company.type || 'Private Company';
+
+    // Stats
+    var statsContainer = document.getElementById('cStats');
+    if (statsContainer && company.stats) {
+      statsContainer.innerHTML = '';
+      company.stats.forEach(function(stat) {
+        var box = document.createElement('div');
+        box.className = 'company-stat-box';
+        var valId = stat.label === 'Followers' ? ' id="stat-followers-val"' : (stat.label === 'Hiring Rate' ? ' id="stat-hiring-rate"' : '');
+        box.innerHTML = '<span class="company-stat-num"' + valId + ' data-target="' + stat.target + '">0</span><span class="company-stat-label">' + stat.label + '</span>';
+        statsContainer.appendChild(box);
+      });
+      animateStatsCounters();
+    }
+
+    // Ratings
+    var rating = company.rating || {};
+    var ratingVal = document.getElementById('cRatingVal');
+    if (ratingVal) ratingVal.textContent = rating.score || '0';
+    var ratingStars = document.getElementById('cRatingStars');
+    if (ratingStars) {
+      var starsStr = '';
+      var scoreNum = Math.round(parseFloat(rating.score) || 0);
+      for (var s = 0; s < 5; s++) starsStr += s < scoreNum ? '★' : '☆';
+      ratingStars.textContent = starsStr;
+    }
+    var ratingCount = document.getElementById('cRatingCount');
+    if (ratingCount) ratingCount.textContent = (rating.total || '0') + ' Reviews';
+
+    // Rating Bars
+    var ratingBars = document.getElementById('cRatingBars');
+    if (ratingBars && rating.bars) {
+      ratingBars.innerHTML = '';
+      rating.bars.forEach(function(pct, idx) {
+        var starsCount = 5 - idx;
+        var barRow = document.createElement('div');
+        barRow.className = 'rating-bar-row';
+        barRow.innerHTML = '<span style="width:20px; text-align:right;">' + starsCount + '★</span><div class="rating-bar-track"><div class="rating-bar-fill" style="width: 0%;" data-percent="' + pct + '"></div></div><span style="width:30px; text-align:right;">' + pct + '%</span>';
+        ratingBars.appendChild(barRow);
+      });
+      setTimeout(function() {
+        var fills = ratingBars.querySelectorAll('.rating-bar-fill');
+        fills.forEach(function(f) {
+          f.style.transition = 'width 1s cubic-bezier(0.16, 1, 0.3, 1)';
+          f.style.width = f.getAttribute('data-percent') + '%';
+        });
+      }, 250);
+    }
+
+    // Social Links
+    var socialContainer = document.getElementById('cSocial');
+    if (socialContainer && company.socials) {
+      socialContainer.innerHTML = '';
+      company.socials.forEach(function(soc) {
+        var pill = document.createElement('a');
+        pill.href = soc.url;
+        pill.className = 'company-social-pill';
+        pill.innerHTML = '<span>' + soc.icon + '</span> ' + soc.label;
+        socialContainer.appendChild(pill);
+      });
+    }
+
+    // Load reviews from API
+    api.get('/reviews/' + company._id).then(function(reviews) {
+      var container = document.getElementById('cReviews');
+      if (!container) return;
+      if (!reviews || reviews.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:16px 0;">No reviews yet. Be the first to share your experience!</p>';
+        return;
+      }
+      container.innerHTML = '';
+      reviews.forEach(function(rev) {
+        var item = document.createElement('div');
+        item.className = 'company-review-item';
+        item.innerHTML =
+          '<div class="company-reviewer-row">' +
+            '<div>' +
+              '<span class="company-reviewer-name">' + escapeHtml(rev.author) + '</span>' +
+              '<span class="company-reviewer-role">' + escapeHtml(rev.role || '') + '</span>' +
+            '</div>' +
+            '<span class="company-review-date">' + escapeHtml(rev.createdAt ? new Date(rev.createdAt).toLocaleDateString() : '') + '</span>' +
+          '</div>' +
+          '<div class="company-review-stars">' + starsFromNumber(rev.stars) + '</div>' +
+          '<div class="company-review-text">"' + escapeHtml(rev.text) + '"</div>';
+        container.appendChild(item);
+      });
+      var countEl = document.getElementById('cRatingCount');
+      if (countEl) countEl.textContent = reviews.length + ' Reviews';
+    }).catch(function() {});
+
+    // Render jobs from API data
+    var jobsContainer = document.getElementById('companyJobsContainer');
+    var openingsSection = document.getElementById('current-openings-section');
+    if (jobsContainer) {
+      jobsContainer.innerHTML = '';
+      if (jobs && jobs.length > 0) {
+        if (openingsSection) openingsSection.style.display = 'block';
+        jobs.forEach(function(job) {
+          var card = document.createElement('div');
+          card.className = 'featured-job-card';
+          card.setAttribute('data-job-id', job._id);
+          card.innerHTML =
+            '<button class="job-save-btn job-save-btn--icon-only" data-save-job data-job-id="' + job._id + '" data-job-title="' + escapeHtml(job.title) + '" aria-label="Save this job" aria-pressed="false">' +
+              '<svg class="job-save-btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 3a2 2 0 0 0-2 2v16l8-5 8 5V5a2 2 0 0 0-2-2H6z" stroke-linejoin="round" stroke-linecap="round"/></svg>' +
+              '<span class="job-save-btn-label">Save</span>' +
+            '</button>' +
+            '<div class="featured-job-top"><span class="job-type-badge">' + (job.type || 'Full-Time') + '</span>' +
+              (job.fresher ? '<span class="fresher-badge" style="background:#dcfce7; color:#166534; border:1px solid #bbf7d0; padding:4px 14px; border-radius:var(--pill); font-size:0.75rem; font-weight:600;">Freshers Can Apply</span>' : '') +
+            '</div>' +
+            '<h3>' + escapeHtml(job.title) + '</h3>' +
+            '<p class="featured-job-company"><a href="company.html?id=' + company._id + '" style="color:inherit; text-decoration:none;">' + escapeHtml(company.name) + '</a> &middot; ' + escapeHtml(job.location || company.hq || '') + '</p>' +
+            '<ul class="featured-job-meta"><li>💼 ' + escapeHtml(job.exp || '') + '</li><li>💰 ' + escapeHtml(job.sal || '') + '</li></ul>' +
+            '<a href="job-details.html?id=' + job._id + '" class="btn-outline featured-job-btn">View Details</a>';
+          jobsContainer.appendChild(card);
+        });
+        var saveBtns = jobsContainer.querySelectorAll('[data-save-job]');
+        saveBtns.forEach(function(btn) {
+          var jId = btn.getAttribute('data-job-id');
+          var jTitle = btn.getAttribute('data-job-title') || '';
+          updateSaveButtonUI(btn, isJobSaved(jId));
+          btn.onclick = function(e) {
+            e.stopPropagation();
+            toggleSaveJob(jId, jTitle, btn);
+          };
+        });
+      } else {
+        if (openingsSection) openingsSection.style.display = 'block';
+        jobsContainer.innerHTML = '<div style="text-align:center; padding:24px 0; color:var(--text-muted);"><p style="font-size:0.95rem; margin-bottom:0;">There are currently no active job listings for ' + escapeHtml(company.name) + '.</p></div>';
+      }
+    }
+
+    // Follow button
+    var followBtn = document.getElementById('followBtn') || document.getElementById('cFollowBtn');
+    if (followBtn) {
+      followBtn.onclick = function() {
+        if (!api.isLoggedIn()) {
+          alert('Please login to follow companies.');
+          return;
+        }
+        api.post('/companies/' + company._id + '/follow')
+          .then(function(result) {
+            followBtn.textContent = result.following ? 'Following' : 'Follow';
+            followBtn.classList.toggle('following', result.following);
+          });
+      };
+    }
+
+    // Sort dropdown handler
+    var sortSelect = document.getElementById('reviewSortSelect');
+    if (sortSelect) {
+      sortSelect.value = currentSort;
+      sortSelect.addEventListener('change', function() {
+        currentSort = this.value;
+        // Re-fetch reviews with new sort
+        api.get('/reviews/' + company._id + '?sort=' + currentSort).then(function(reviews) {
+          var container = document.getElementById('cReviews');
+          if (!container) return;
+          if (!reviews || reviews.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:16px 0;">No reviews yet.</p>';
+            return;
+          }
+          container.innerHTML = '';
+          reviews.forEach(function(rev) {
+            var item = document.createElement('div');
+            item.className = 'company-review-item';
+            item.innerHTML =
+              '<div class="company-reviewer-row"><div><span class="company-reviewer-name">' + escapeHtml(rev.author) + '</span><span class="company-reviewer-role">' + escapeHtml(rev.role || '') + '</span></div><span class="company-review-date">' + escapeHtml(rev.createdAt ? new Date(rev.createdAt).toLocaleDateString() : '') + '</span></div>' +
+              '<div class="company-review-stars">' + starsFromNumber(rev.stars) + '</div>' +
+              '<div class="company-review-text">"' + escapeHtml(rev.text) + '"</div>';
+            container.appendChild(item);
+          });
+        });
+      });
+    }
+  }
+
+  function renderCompanyFromLocal(data) {
 
     var breadcrumbCurrent = document.getElementById('cBreadcrumbCurrent');
     if (breadcrumbCurrent) breadcrumbCurrent.textContent = data.name;

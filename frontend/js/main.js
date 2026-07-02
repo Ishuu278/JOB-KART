@@ -212,6 +212,94 @@
     }
   }
 
+  // ===== DYNAMIC JOB LISTINGS (API-powered) =====
+  function initDynamicJobListings() {
+    var container = document.getElementById('jobListings');
+    var loader = document.getElementById('jobListingsLoader');
+    var emptyState = document.getElementById('jobListingsEmpty');
+    var errorState = document.getElementById('jobListingsError');
+    var ctaWrap = document.getElementById('openingsCtaWrap');
+
+    if (!container) return; // Not on openings page
+
+    if (typeof api === 'undefined') return;
+
+    api.get('/jobs')
+      .then(function(jobs) {
+        if (loader) loader.style.display = 'none';
+
+        if (!jobs || jobs.length === 0) {
+          if (emptyState) emptyState.style.display = 'flex';
+          return;
+        }
+
+        if (ctaWrap) ctaWrap.style.display = '';
+
+        var html = '';
+        jobs.forEach(function(job) {
+          var company = job.companyId || {};
+          var companyName = company.name || 'Unknown Company';
+          var companyId = company._id || '';
+          var jobId = job._id;
+          var skills = job.skills || [];
+          var fresher = job.fresher;
+
+          var skillsHtml = '';
+          skills.forEach(function(skill) {
+            skillsHtml += '<span class="skill-tag">' + skill + '</span>';
+          });
+
+          var fresherBadge = fresher ? '<span class="fresher-badge">Freshers Can Apply</span>' : '';
+
+          html += '<div class="job-card" data-job-id="' + jobId + '">' +
+            '<div class="job-header">' +
+              '<div class="job-header-left">' +
+                '<h3 class="job-title">' + job.title + '</h3>' +
+                '<div class="job-meta">' +
+                  '<span>🏢 <a href="company.html?id=' + companyId + '" style="color:var(--accent); font-weight:600;">' + companyName + '</a></span>' +
+                  '<span>📍 ' + (job.location || '') + '</span>' +
+                  '<span>💼 ' + (job.exp || '') + '</span>' +
+                  (job.sal ? '<span>💰 ' + job.sal + '</span>' : '') +
+                  fresherBadge +
+                '</div>' +
+              '</div>' +
+              '<div class="job-header-actions" style="display:flex; gap:8px; align-items:center;">' +
+                '<button class="job-apply-btn" data-apply-job="' + jobId + '" data-apply-title="' + job.title + '">Apply</button>' +
+                '<a href="job-details.html?id=' + jobId + '" class="job-apply-btn" style="background:transparent; color:var(--navy); border:1px solid var(--navy); text-decoration:none; font-size:0.82rem; padding:6px 14px; border-radius:var(--pill);">Details</a>' +
+                '<button class="job-compare-btn" data-compare-job="' + jobId + '" data-compare-title="' + job.title + '" data-compare-company="' + companyName + '" data-compare-exp="' + (job.exp || '') + '" data-compare-sal="' + (job.sal || '') + '" data-compare-location="' + (job.location || '') + '" data-compare-type="' + (job.type || '') + '" data-compare-skills="' + skills.join('|') + '">' +
+                  '<svg class="job-compare-btn-icon" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>' +
+                  '<span class="job-compare-btn-label">Compare</span>' +
+                '</button>' +
+                '<button class="job-toggle" aria-label="Expand job details">▼</button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="job-body">' +
+              '<div class="job-body-inner">' +
+                '<p>' + (job.description || '') + '</p>' +
+                (skillsHtml ? '<div class="skills-list">' + skillsHtml + '</div>' : '') +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        });
+
+        container.innerHTML = html;
+
+        // Re-init all handlers for the newly rendered cards
+        initJobAccordion();
+        initJobSelection();
+        initDirectApplyButtons();
+        initSaveJobButtons();
+        initCompareButtons();
+        syncCompareButtons();
+        renderCompareBar();
+      })
+      .catch(function(err) {
+        console.error('Failed to load jobs:', err);
+        if (loader) loader.style.display = 'none';
+        if (errorState) errorState.style.display = 'flex';
+      });
+  }
+
   // ===== JOB SELECTION FOR APPLY FORM =====
   function initJobSelection() {
     var jobCards = document.querySelectorAll('.job-card[data-job-id]');
@@ -225,6 +313,61 @@
         });
         card.classList.add('selected');
         hiddenInput.value = card.getAttribute('data-job-id');
+      });
+    });
+  }
+
+  // ===== DIRECT APPLY BUTTON ON JOB CARDS =====
+  function initDirectApplyButtons() {
+    var applyBtns = document.querySelectorAll('.job-apply-btn[data-apply-job]');
+    if (!applyBtns.length) return;
+
+    applyBtns.forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+
+        var jobId = btn.getAttribute('data-apply-job');
+        var jobTitle = btn.getAttribute('data-apply-title') || 'this position';
+
+        if (!api.isLoggedIn()) {
+          showJobToast('Please login to apply');
+          setTimeout(function() {
+            window.location.href = 'login.html';
+          }, 1000);
+          return;
+        }
+
+        var user = api.getUser();
+        if (user && user.role === 'recruiter') {
+          showJobToast('Recruiters cannot apply for jobs');
+          return;
+        }
+
+        // Set the job in the apply form and scroll to it
+        var hiddenInput = document.getElementById('selectedJobId');
+        var applySection = document.getElementById('apply-section');
+        var applyForm = document.getElementById('applyForm');
+
+        if (hiddenInput) hiddenInput.value = jobId;
+
+        // Reset form if it was previously submitted
+        if (applyForm) {
+          applyForm.style.display = '';
+          var successEl = document.getElementById('applySuccess');
+          if (successEl) successEl.classList.remove('show');
+        }
+
+        // Scroll to apply section
+        if (applySection) {
+          applySection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Highlight the selected job card
+        document.querySelectorAll('.job-card.selected').forEach(function (c) {
+          c.classList.remove('selected');
+        });
+        var jobCard = document.querySelector('.job-card[data-job-id="' + jobId + '"]');
+        if (jobCard) jobCard.classList.add('selected');
       });
     });
   }
@@ -246,25 +389,16 @@
       e.preventDefault();
 
       var formData = new FormData(form);
+      var data = Object.fromEntries(formData);
 
-      console.log('[Job-Kart] Contact form submitted:');
-      formData.forEach(function (value, key) {
-        console.log('  ' + key + ':', value);
-      });
-
-      /*
-        BACKEND INTEGRATION POINT — /api/contact
-        fetch('/api/contact', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(Object.fromEntries(formData))
+      api.post('/contact', data)
+        .then(function(result) {
+          showFormSuccess(form, document.getElementById('contactSuccess'));
         })
-        .then(function(res) { return res.json(); })
-        .then(function(data) { showFormSuccess(form, document.getElementById('contactSuccess')); })
-        .catch(function(err) { console.error('Contact form error:', err); alert('Something went wrong. Please try again.'); });
-      */
-
-      showFormSuccess(form, document.getElementById('contactSuccess'));
+        .catch(function(err) {
+          console.error('Contact form error:', err);
+          alert('Something went wrong. Please try again.');
+        });
     });
   }
 
@@ -273,28 +407,53 @@
     var form = document.getElementById('applyForm');
     if (!form) return;
 
+    var loginRequired = document.getElementById('applyLoginRequired');
+
+    // If user is not logged in, show login prompt instead of form
+    if (typeof api !== 'undefined' && !api.isLoggedIn()) {
+      form.style.display = 'none';
+      if (loginRequired) loginRequired.style.display = '';
+      return;
+    }
+
+    // Auto-fill form with logged-in user data
+    if (typeof api !== 'undefined' && api.isLoggedIn()) {
+      var user = api.getUser();
+      if (user) {
+        var nameField = document.getElementById('fullName');
+        var emailField = document.getElementById('email');
+        var phoneField = document.getElementById('phone');
+        if (nameField && user.name) nameField.value = user.name;
+        if (emailField && user.email) emailField.value = user.email;
+        if (phoneField && user.phone) phoneField.value = user.phone;
+      }
+    }
+
     form.addEventListener('submit', function (e) {
       e.preventDefault();
 
       var formData = new FormData(form);
+      var jobId = formData.get('jobId') || localStorage.getItem('selectedJobId');
 
-      console.log('[Job-Kart] Application form submitted:');
-      formData.forEach(function (value, key) {
-        console.log('  ' + key + ':', value);
-      });
+      if (!jobId) {
+        alert('Please select a job to apply for.');
+        return;
+      }
 
-      /*
-        BACKEND INTEGRATION POINT — /api/apply
-        fetch('/api/apply', {
-          method: 'POST',
-          body: formData
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(data) { showFormSuccess(form, document.getElementById('applySuccess')); })
-        .catch(function(err) { console.error('Apply form error:', err); alert('Something went wrong. Please try again.'); });
-      */
-
-      showFormSuccess(form, document.getElementById('applySuccess'));
+      if (api.isLoggedIn()) {
+        // Logged in user - apply via API with real MongoDB ObjectId
+        var data = { jobId: jobId };
+        api.post('/applications/apply', data)
+          .then(function(result) {
+            showFormSuccess(form, document.getElementById('applySuccess'));
+          })
+          .catch(function(err) {
+            console.error('Apply form error:', err);
+            alert(err.message || 'Something went wrong. Please try again.');
+          });
+      } else {
+        window.location.href = 'login.html';
+      }
     });
   }
 
@@ -685,6 +844,170 @@
   // Expose for cross-file access (job-details.js uses this)
   window.renderCompareBar = renderCompareBar;
 
+  // ===== AUTH FORM (Login/Register) =====
+  function initAuthForm() {
+    var form = document.getElementById('authForm');
+    if (!form) return;
+
+    var isRegister = false;
+    var title = document.getElementById('auth-title');
+    var subtitle = document.getElementById('auth-subtitle');
+    var nameField = document.getElementById('nameField');
+    var roleField = document.getElementById('roleField');
+    var submitBtn = document.getElementById('authSubmitBtn');
+    var toggleText = document.getElementById('authToggleText');
+    var toggleLink = document.getElementById('authToggleLink');
+    var errorEl = document.getElementById('authError');
+
+    // If already logged in, redirect to dashboard
+    if (typeof api !== 'undefined' && api.isLoggedIn()) {
+      var user = api.getUser();
+      if (user && user.role === 'recruiter') {
+        window.location.href = 'recruiter-dashboard.html';
+      } else {
+        window.location.href = 'candidate-dashboard.html';
+      }
+      return;
+    }
+
+    toggleLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      isRegister = !isRegister;
+      if (isRegister) {
+        title.textContent = 'Register for Job-Kart';
+        subtitle.textContent = 'Create an account to start applying.';
+        nameField.style.display = 'block';
+        roleField.style.display = 'block';
+        submitBtn.textContent = 'Register';
+        toggleText.textContent = 'Already have an account?';
+        toggleLink.textContent = 'Login';
+      } else {
+        title.textContent = 'Login to Job-Kart';
+        subtitle.textContent = 'Access your dashboard and apply for jobs.';
+        nameField.style.display = 'none';
+        roleField.style.display = 'none';
+        submitBtn.textContent = 'Login';
+        toggleText.textContent = "Don't have an account?";
+        toggleLink.textContent = 'Register';
+      }
+      errorEl.style.display = 'none';
+    });
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      errorEl.style.display = 'none';
+
+      var email = document.getElementById('authEmail').value;
+      var password = document.getElementById('authPassword').value;
+
+      if (isRegister) {
+        var name = document.getElementById('authName').value;
+        var role = document.getElementById('authRole').value;
+        if (!name) {
+          errorEl.textContent = 'Please enter your name';
+          errorEl.style.display = 'block';
+          return;
+        }
+        api.register({ name: name, email: email, password: password, role: role })
+          .then(function(data) {
+            if (data.role === 'recruiter') {
+              window.location.href = 'recruiter-dashboard.html';
+            } else {
+              window.location.href = 'candidate-dashboard.html';
+            }
+          })
+          .catch(function(err) {
+            errorEl.textContent = err.message || 'Registration failed';
+            errorEl.style.display = 'block';
+          });
+      } else {
+        api.login(email, password)
+          .then(function(data) {
+            if (data.role === 'recruiter') {
+              window.location.href = 'recruiter-dashboard.html';
+            } else {
+              window.location.href = 'candidate-dashboard.html';
+            }
+          })
+          .catch(function(err) {
+            errorEl.textContent = err.message || 'Login failed';
+            errorEl.style.display = 'block';
+          });
+      }
+    });
+  }
+
+  // ===== UPDATE NAVBAR FOR LOGGED IN USER =====
+  function updateNavbarForUser() {
+    if (typeof api === 'undefined' || !api.isLoggedIn()) return;
+
+    var user = api.getUser();
+    if (!user) return;
+
+    var ctaBtn = document.getElementById('navCtaBtn') || document.querySelector('.nav-cta');
+    var roleToggleWrap = document.getElementById('roleToggleWrap');
+    var roleToggleBtns = document.querySelectorAll('.role-toggle-btn');
+
+    if (ctaBtn) {
+      if (user.role === 'recruiter') {
+        ctaBtn.textContent = 'Recruiter Dashboard';
+        ctaBtn.href = 'recruiter-dashboard.html';
+      } else {
+        ctaBtn.textContent = 'My Dashboard';
+        ctaBtn.href = 'candidate-dashboard.html';
+      }
+    }
+
+    // Show role toggle
+    if (roleToggleWrap) {
+      roleToggleWrap.style.display = 'list-item';
+    }
+
+    // Set active toggle button
+    roleToggleBtns.forEach(function(btn) {
+      if (btn.getAttribute('data-role') === user.role) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var targetRole = btn.getAttribute('data-role');
+        if (targetRole === user.role) return;
+
+        // Update user role
+        user.role = targetRole;
+        api.setUser(user);
+
+        // Redirect to appropriate dashboard
+        if (targetRole === 'recruiter') {
+          window.location.href = 'recruiter-dashboard.html';
+        } else {
+          window.location.href = 'candidate-dashboard.html';
+        }
+      });
+    });
+
+    // Add logout button next to CTA
+    var navLinks = document.querySelector('.nav-links');
+    if (navLinks && !document.getElementById('logoutBtn')) {
+      var logoutLi = document.createElement('li');
+      var logoutBtn = document.createElement('a');
+      logoutBtn.href = '#';
+      logoutBtn.id = 'logoutBtn';
+      logoutBtn.textContent = 'Logout';
+      logoutBtn.style.cssText = 'color:var(--white); opacity:0.7; font-size:0.85rem; cursor:pointer; padding:8px 16px; border:1px solid rgba(255,255,255,0.3); border-radius:var(--radius); transition:all 0.3s;';
+      logoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        api.logout();
+        window.location.href = 'login.html';
+      });
+      logoutLi.appendChild(logoutBtn);
+      navLinks.appendChild(logoutLi);
+    }
+  }
+
   // ===== INITIALIZE EVERYTHING ON DOM READY =====
   document.addEventListener('DOMContentLoaded', function () {
     setActiveNav();
@@ -697,6 +1020,7 @@
     initFaqAccordion();
     initTickerHover();
     initJobSelection();
+    initDirectApplyButtons();
     initContactForm();
     initApplyForm();
     initSmoothScroll();
@@ -706,5 +1030,8 @@
     createCompareBarDOM();
     initCompareButtons();
     renderCompareBar();
+    initAuthForm();
+    updateNavbarForUser();
+    initDynamicJobListings();
   });
 })();

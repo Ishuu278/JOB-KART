@@ -22,10 +22,35 @@
     } catch (e) {}
   }
 
-  // Find full job details from COMPANIES_DATA to enrich comparison
+  // Find full job details from COMPANIES_DATA or API
   function findFullJob(jobId) {
+    // Try API first for MongoDB ObjectIds
+    if (typeof api !== 'undefined' && /^[0-9a-fA-F]{24}$/.test(jobId)) {
+      return api.get('/jobs/' + jobId).then(function(data) {
+        return {
+          job: {
+            id: data._id,
+            title: data.title,
+            exp: data.exp,
+            sal: data.sal,
+            location: data.location,
+            type: data.type,
+            skills: data.skills,
+            benefits: data.benefits
+          },
+          company: {
+            id: data.companyId._id,
+            name: data.companyId.name,
+            logo: data.companyId.logo,
+            hq: data.companyId.hq
+          }
+        };
+      }).catch(function() { return null; });
+    }
+
+    // Fallback to local data
     var companies = window.COMPANIES_DATA;
-    if (!companies) return null;
+    if (!companies) return Promise.resolve(null);
 
     for (var key in companies) {
       if (companies.hasOwnProperty(key)) {
@@ -33,47 +58,47 @@
         if (company.jobs) {
           var found = company.jobs.find(function(j) { return j.id === jobId; });
           if (found) {
-            return {
+            return Promise.resolve({
               job: found,
               company: company
-            };
+            });
           }
         }
       }
     }
-    return null;
+    return Promise.resolve(null);
   }
 
   // Build enriched job data (merge localStorage selection + full data)
   function enrichJobData(selectedJob) {
-    var full = findFullJob(selectedJob.id);
-    if (full) {
+    return findFullJob(selectedJob.id).then(function(full) {
+      if (full) {
+        return {
+          id: selectedJob.id,
+          title: full.job.title,
+          company: full.company.name,
+          companyId: full.company.id,
+          exp: full.job.exp || selectedJob.exp || 'Not specified',
+          sal: full.job.sal || selectedJob.sal || 'Not specified',
+          location: full.job.location || selectedJob.location || full.company.hq || 'Not specified',
+          type: full.job.type || selectedJob.type || 'Full-Time',
+          skills: full.job.skills || selectedJob.skills || [],
+          benefits: full.job.benefits || selectedJob.benefits || []
+        };
+      }
       return {
         id: selectedJob.id,
-        title: full.job.title,
-        company: full.company.name,
-        companyId: full.company.id,
-        exp: full.job.exp || selectedJob.exp || 'Not specified',
-        sal: full.job.sal || selectedJob.sal || 'Not specified',
-        location: full.job.location || selectedJob.location || full.company.hq || 'Not specified',
-        type: full.job.type || selectedJob.type || 'Full-Time',
-        skills: full.job.skills || selectedJob.skills || [],
-        benefits: full.job.benefits || selectedJob.benefits || []
+        title: selectedJob.title || 'Untitled Job',
+        company: selectedJob.company || 'Unknown Company',
+        companyId: '',
+        exp: selectedJob.exp || 'Not specified',
+        sal: selectedJob.sal || 'Not specified',
+        location: selectedJob.location || 'Not specified',
+        type: selectedJob.type || 'Full-Time',
+        skills: selectedJob.skills || [],
+        benefits: selectedJob.benefits || []
       };
-    }
-    // Fallback to localStorage data
-    return {
-      id: selectedJob.id,
-      title: selectedJob.title || 'Untitled Job',
-      company: selectedJob.company || 'Unknown Company',
-      companyId: '',
-      exp: selectedJob.exp || 'Not specified',
-      sal: selectedJob.sal || 'Not specified',
-      location: selectedJob.location || 'Not specified',
-      type: selectedJob.type || 'Full-Time',
-      skills: selectedJob.skills || [],
-      benefits: selectedJob.benefits || []
-    };
+    });
   }
 
   // Find common skills between two jobs
@@ -102,8 +127,35 @@
       return;
     }
 
-    var job1 = enrichJobData(jobs[0]);
-    var job2 = enrichJobData(jobs[1]);
+    // Handle async enrichJobData
+    Promise.all([enrichJobData(jobs[0]), enrichJobData(jobs[1])]).then(function(results) {
+      var job1 = results[0];
+      var job2 = results[1];
+      if (!job1 || !job2) {
+        container.innerHTML =
+          '<div class="compare-empty">' +
+            '<span class="compare-empty__icon">⚖️</span>' +
+            '<h2 class="compare-empty__title">Could Not Load Job Data</h2>' +
+            '<p class="compare-empty__desc">Please try again or browse open positions.</p>' +
+            '<a href="openings.html" class="btn-primary" style="padding: 14px 36px;">Browse Open Positions</a>' +
+          '</div>';
+        if (ctaSection) ctaSection.style.display = 'none';
+        return;
+      }
+      renderComparisonTable(job1, job2, container, ctaSection);
+    }).catch(function() {
+      container.innerHTML =
+        '<div class="compare-empty">' +
+          '<span class="compare-empty__icon">⚠️</span>' +
+          '<h2 class="compare-empty__title">Error Loading Comparison</h2>' +
+          '<p class="compare-empty__desc">Something went wrong. Please try again.</p>' +
+          '<a href="openings.html" class="btn-primary" style="padding: 14px 36px;">Browse Open Positions</a>' +
+        '</div>';
+      if (ctaSection) ctaSection.style.display = 'none';
+    });
+  }
+
+  function renderComparisonTable(job1, job2, container, ctaSection) {
     var commonSkills = findCommonSkills(job1.skills, job2.skills);
 
     var html = '<table class="compare-table">';

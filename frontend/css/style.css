@@ -174,6 +174,42 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--white) !important;
 }
 
+/* ===== ROLE TOGGLE (Candidate / Recruiter) ===== */
+.role-toggle-wrap {
+  list-style: none;
+}
+.role-toggle {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--pill);
+  padding: 3px;
+  gap: 0;
+}
+.role-toggle-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: var(--pill);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.6);
+  background: transparent;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.role-toggle-btn:hover {
+  color: var(--white);
+}
+.role-toggle-btn.active {
+  background: var(--white);
+  color: var(--navy);
+}
+.role-toggle-btn.active:hover {
+  background: var(--white);
+}
+
 /* ===== MOBILE HAMBURGER NAV ===== */
 .mobile-menu-btn {
   display: none;
@@ -2243,6 +2279,24 @@ footer {
     box-shadow:0 0 8px rgba(29,78,216,.2);
 }
 
+.company-id-card select{
+    width:100%;
+    padding:15px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:16px;
+    margin-bottom:20px;
+    outline:none;
+    transition:.3s;
+    background:#fff;
+    cursor:pointer;
+}
+
+.company-id-card select:focus{
+    border-color:#1d4ed8;
+    box-shadow:0 0 8px rgba(29,78,216,.2);
+}
+
 .company-id-card button{
     width:100%;
     padding:15px;
@@ -2259,9 +2313,46 @@ footer {
     background:#163eb8;
 }
 
-/* ============================================================
-   JOB COMPARISON — Compare button, comparison bar, compare page
+/* ===== JOB COMPARISON — Compare button, comparison bar, compare page
    ============================================================ */
+
+/* ===== APPLY BUTTON (on job cards) ===== */
+.job-apply-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: var(--white);
+  padding: 8px 18px;
+  border-radius: var(--pill);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition:
+    background var(--transition),
+    color var(--transition),
+    border-color var(--transition),
+    transform 0.15s ease;
+}
+
+.job-apply-btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--white);
+}
+
+.job-apply-btn:active {
+  transform: scale(0.96);
+}
+
+.job-apply-btn--applied {
+  background: #10B981;
+  border-color: #10B981;
+  color: var(--white);
+  cursor: default;
+}
 
 /* ===== COMPARE BUTTON (mirrors .job-save-btn patterns) ===== */
 .job-compare-btn {
@@ -2757,4 +2848,57 @@ footer {
   .compare-job-cell__title {
     font-size: 1rem;
   }
+}
+
+
+/* ===== JOB LISTINGS SKELETON LOADER ===== */
+.job-listings-loader {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.job-skeleton {
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+.skeleton-line {
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--border-soft) 25%, var(--bg-section-alt) 50%, var(--border-soft) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+}
+.skeleton-title {
+  height: 22px;
+  width: 55%;
+  margin-bottom: 12px;
+}
+.skeleton-meta {
+  height: 16px;
+  width: 80%;
+  margin-bottom: 10px;
+}
+.skeleton-tags {
+  height: 14px;
+  width: 45%;
+}
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Empty / Error state */
+.job-listings-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
 }

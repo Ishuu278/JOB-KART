@@ -23,7 +23,13 @@
       <li><a href="openings.html" id="nav-openings" data-nav="openings">OPEN POSITIONS</a></li>
       <li><a href="about.html" id="nav-about" data-nav="about">ABOUT US</a></li>
       <li><a href="contact.html" id="nav-contact" data-nav="contact">CONTACT US</a></li>
-      <li><a href="openings.html" class="nav-cta">Get Started</a></li>
+      <li class="role-toggle-wrap" id="roleToggleWrap" style="display:none;">
+        <div class="role-toggle" id="roleToggle">
+          <button class="role-toggle-btn active" data-role="candidate">Candidate</button>
+          <button class="role-toggle-btn" data-role="recruiter">Recruiter</button>
+        </div>
+      </li>
+      <li><a href="login.html" class="nav-cta" id="navCtaBtn">Sign In</a></li>
     </ul>
     <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation menu">
       <span></span><span></span><span></span>
@@ -376,16 +382,32 @@
     </div>
   </footer>
 
+  <script src="js/api.js"></script>
   <script src="js/main.js"></script>
 
   <section class="company-id-section">
     <div class="company-id-card">
-        <h2>Company Portal</h2>
-        <p>Enter your Company ID to access your recruiter dashboard.</p>
+        <h2 id="auth-title">Login to Job-Kart</h2>
+        <p id="auth-subtitle">Access your dashboard and apply for jobs.</p>
 
-        <form>
-            <input type="text" placeholder="Enter Company ID" required>
-            <button type="submit">Continue</button>
+        <form id="authForm">
+            <div id="nameField" style="display:none;">
+                <input type="text" id="authName" placeholder="Full Name">
+            </div>
+            <input type="email" id="authEmail" placeholder="Email Address" required>
+            <input type="password" id="authPassword" placeholder="Password" required>
+            <div id="roleField" style="display:none;">
+                <select id="authRole">
+                    <option value="candidate">Candidate</option>
+                    <option value="recruiter">Recruiter</option>
+                </select>
+            </div>
+            <button type="submit" id="authSubmitBtn">Login</button>
+            <p style="margin-top:16px; font-size:0.9rem; color:var(--text-muted);">
+                <span id="authToggleText">Don't have an account?</span>
+                <a href="#" id="authToggleLink" style="color:var(--accent); font-weight:600; text-decoration:none;">Register</a>
+            </p>
+            <p id="authError" style="color:red; font-size:0.85rem; margin-top:8px; display:none;"></p>
         </form>
     </div>
 </section>
