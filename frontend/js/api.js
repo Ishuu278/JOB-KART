@@ -1,4 +1,6 @@
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = (typeof window !== 'undefined' && window.location.protocol !== 'file:' && (window.location.port === '5000' || !window.location.hostname.match(/localhost|127\.0\.0\.1/)))
+  ? '/api'
+  : 'http://localhost:5000/api';
 
 const api = {
   getToken: () => localStorage.getItem('jobkart_token'),
