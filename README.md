@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="frontend/assets/readme/hero-banner.png" alt="JOB-KART Banner" width="100%" />
+<img src="frontend/assets/Login.png" alt="JOB-KART Banner" width="100%" />
 
 # JOB<span style="color:#2563EB">·</span>KART
 
