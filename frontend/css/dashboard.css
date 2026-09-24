@@ -998,6 +998,41 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
+/* Recruiter inline status update */
+.applicant-status-select {
+  margin-left: auto;
+  padding: 6px 10px;
+  border: 1px solid var(--dash-card-border);
+  border-radius: 8px;
+  background: var(--dash-card-bg, #fff);
+  color: var(--dash-text, #0F1D33);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.applicant-status-select:hover:not(:disabled) {
+  border-color: #2563EB;
+}
+
+.applicant-status-select:focus {
+  outline: none;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.applicant-status-select:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+@media (max-width: 640px) {
+  .applicant-status-select {
+    margin-left: 0;
+  }
+}
+
 .applicant-photo {
   width: 40px;
   height: 40px;

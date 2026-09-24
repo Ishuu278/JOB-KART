@@ -24,6 +24,7 @@
       <li><a href="openings.html" data-nav="openings">OPEN POSITIONS</a></li>
       <li><a href="about.html" data-nav="about">ABOUT US</a></li>
       <li><a href="contact.html" data-nav="contact">CONTACT US</a></li>
+      <li><button id="postJobBtn" style="padding:8px 18px; border:none; background:var(--accent,#2563EB); color:#fff; border-radius:999px; font-size:0.8rem; font-weight:700; cursor:pointer; letter-spacing:0.4px;">+ POST JOB</button></li>
       <li class="role-toggle-wrap" id="roleToggleWrap">
         <div class="role-toggle" id="roleToggle">
           <button class="role-toggle-btn" data-role="candidate">Candidate</button>
@@ -280,6 +281,60 @@
       <p>&copy; 2026 Job-Kart. All rights reserved.</p>
     </div>
   </footer>
+
+  <!-- ===== POST A JOB MODAL ===== -->
+  <div id="postJobModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(10,20,40,0.55); backdrop-filter:blur(3px);">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:min(640px, calc(100vw - 32px)); max-height:88vh; overflow-y:auto; background:var(--card-bg,#fff); border-radius:18px; padding:28px 30px; box-shadow:0 24px 64px rgba(10,20,40,0.25);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <h2 style="margin:0; font-size:1.25rem; color:var(--text,#0F1D33);">Post a New Job</h2>
+        <button id="postJobClose" style="border:none; background:transparent; font-size:1.4rem; cursor:pointer; color:var(--text-muted,#5A6B87); line-height:1;">×</button>
+      </div>
+      <p style="margin:0 0 18px; font-size:0.86rem; color:var(--text-muted,#5A6B87);">Fill in the role details — it goes live on Openings instantly.</p>
+      <form id="postJobForm">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div style="grid-column:1 / -1;">
+            <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:5px; color:var(--text,#0F1D33);">Job Title *</label>
+            <input name="title" required placeholder="e.g. Senior Frontend Engineer" style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--bg,#F6F8FC); color:var(--text,#0F1D33);" />
+          </div>
+          <div style="grid-column:1 / -1;">
+            <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:5px; color:var(--text,#0F1D33);">Description *</label>
+            <textarea name="description" required rows="3" placeholder="What will this person do?" style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; resize:vertical; background:var(--bg,#F6F8FC); color:var(--text,#0F1D33);"></textarea>
+          </div>
+          <div>
+            <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:5px; color:var(--text,#0F1D33);">Job Type</label>
+            <select name="type" style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--bg,#F6F8FC); color:var(--text,#0F1D33);">
+              <option>Full-Time</option><option>Part-Time</option><option>Internship</option><option>Contract</option><option>Remote</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:5px; color:var(--text,#0F1D33);">Location</label>
+            <input name="location" placeholder="e.g. Bhubaneswar, Odisha" style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--bg,#F6F8FC); color:var(--text,#0F1D33);" />
+          </div>
+          <div>
+            <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:5px; color:var(--text,#0F1D33);">Experience</label>
+            <input name="exp" placeholder="e.g. 2-4 Years" style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--bg,#F6F8FC); color:var(--text,#0F1D33);" />
+          </div>
+          <div>
+            <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:5px; color:var(--text,#0F1D33);">Salary</label>
+            <input name="sal" placeholder="e.g. ₹8-12 LPA" style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--bg,#F6F8FC); color:var(--text,#0F1D33);" />
+          </div>
+          <div style="grid-column:1 / -1;">
+            <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:5px; color:var(--text,#0F1D33);">Skills (comma separated)</label>
+            <input name="skills" placeholder="React, Node.js, MongoDB" style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--bg,#F6F8FC); color:var(--text,#0F1D33);" />
+          </div>
+          <div style="grid-column:1 / -1;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.86rem; color:var(--text,#0F1D33); cursor:pointer;">
+              <input type="checkbox" name="fresher" style="accent-color:var(--accent,#2563EB);" /> Open to freshers
+            </label>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:18px;">
+          <button type="button" id="postJobCancel" style="padding:10px 20px; border:1px solid rgba(15,29,51,0.15); background:transparent; border-radius:10px; cursor:pointer; font-size:0.88rem; color:var(--text-muted,#5A6B87);">Cancel</button>
+        <button type="submit" id="postJobSubmit" style="padding:10px 24px; border:none; background:var(--accent,#2563EB); color:#fff; border-radius:10px; cursor:pointer; font-size:0.88rem; font-weight:600;">Publish Job</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script src="js/api.js"></script>
   <script src="js/main.js"></script>

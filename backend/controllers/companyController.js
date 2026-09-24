@@ -1,5 +1,15 @@
+const mongoose = require('mongoose');
 const Company = require('../models/Company');
 const Job = require('../models/Job');
+
+exports.getCompanyNames = async (req, res) => {
+  try {
+    const companies = await Company.find({}, 'name logo logoText industry hq').sort({ name: 1 });
+    res.json(companies);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 exports.getCompanies = async (req, res) => {
   try {
@@ -12,6 +22,9 @@ exports.getCompanies = async (req, res) => {
 
 exports.getCompanyById = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'Company not found' });
+    }
     const company = await Company.findById(req.params.id);
     if (!company) {
       return res.status(404).json({ message: 'Company not found' });

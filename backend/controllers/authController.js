@@ -19,6 +19,18 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Please provide all required fields' });
     }
 
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ message: 'Please provide a valid email address' });
+    }
+
+    if (role && !['candidate', 'recruiter'].includes(role)) {
+      return res.status(400).json({ message: 'Role must be either candidate or recruiter' });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });

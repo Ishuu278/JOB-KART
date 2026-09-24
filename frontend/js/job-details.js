@@ -103,13 +103,14 @@
   }
 
   // Toast Notification
-  function showToast(message) {
+  function showToast(message, type) {
     var existing = document.querySelector('.jobkart-toast');
     if (existing) existing.remove();
 
     var toast = document.createElement('div');
-    toast.className = 'jobkart-toast';
+    toast.className = 'jobkart-toast' + (type === 'error' ? ' jobkart-toast--error' : '');
     toast.textContent = message;
+    if (type === 'error') toast.style.background = '#DC2626';
     document.body.appendChild(toast);
 
     requestAnimationFrame(function() {
@@ -225,7 +226,12 @@
 
   function renderJobFromAPI(data) {
     var job = data;
-    var company = data.companyId;
+    var company = data.companyId || {};
+
+    if (!job || !job.title || !company.name) {
+      renderJobNotFound();
+      return;
+    }
 
     document.title = job.title + ' at ' + company.name + ' | Job-Kart';
 
@@ -330,6 +336,53 @@
     if (saveBtn) {
       updateSaveButton(saveBtn, isJobSaved(job._id));
       saveBtn.onclick = function() { toggleSaveJob(job._id, job.title, saveBtn); };
+    }
+
+    setupApplyButton(job);
+  }
+
+  // Shared Apply / Withdraw button setup for both API and local render paths
+  function setupApplyButton(job) {
+    var applyBtn = document.getElementById('btn-apply');
+    if (!applyBtn) return;
+
+    var applyToJob = function() {
+      window.location.href = 'openings.html?apply=' + job._id;
+    };
+
+    // If logged in as candidate, check whether already applied → offer withdraw
+    if (typeof api !== 'undefined' && api.isLoggedIn()) {
+      var user = api.getUser() || {};
+      if (user.role === 'candidate') {
+        api.get('/applications/my').then(function(apps) {
+          var mine = (apps || []).find(function(a) {
+            var j = a.jobId || {};
+            return (typeof j === 'object' ? j._id : j) === job._id;
+          });
+          if (mine) {
+            applyBtn.textContent = 'Withdraw Application';
+            applyBtn.style.background = '#EF4444';
+            applyBtn.style.borderColor = '#EF4444';
+            applyBtn.onclick = function() {
+              if (!confirm('Withdraw your application for this job?')) return;
+              api.put('/applications/mine/' + mine._id + '/withdraw', {})
+                .then(function() {
+                  showToast('Application withdrawn successfully', 'success');
+                  setTimeout(function() { window.location.reload(); }, 900);
+                })
+                .catch(function(err) {
+                  showToast(err.message || 'Could not withdraw', 'error');
+                });
+            };
+          } else {
+            applyBtn.onclick = applyToJob;
+          }
+        }).catch(function() { applyBtn.onclick = applyToJob; });
+      } else {
+        applyBtn.onclick = applyToJob;
+      }
+    } else {
+      applyBtn.onclick = applyToJob;
     }
   }
 
@@ -458,14 +511,9 @@
       };
     }
 
-    // Setup Apply Button
-    var applyBtn = document.getElementById('btn-apply');
-    if (applyBtn) {
-      applyBtn.onclick = function() {
-        // Smoothly redirect to application form or search page
-        window.location.href = `openings.html?apply=${job.id}`;
-      };
-    }
+      setupApplyButton(job);
+
+    // Setup Share Button
 
     // Setup Share Button
     var shareBtn = document.getElementById('btn-share');

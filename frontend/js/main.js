@@ -212,6 +212,50 @@
     }
   }
 
+  // ===== OPENINGS SEARCH & FILTER BAR =====
+  function initJobFilters() {
+    var bar = document.getElementById('jobFiltersBar');
+    if (!bar || typeof api === 'undefined') return;
+    bar.style.display = 'flex';
+
+    var searchEl = document.getElementById('filterSearch');
+    var typeEl = document.getElementById('filterType');
+    var locEl = document.getElementById('filterLocation');
+    var sortEl = document.getElementById('filterSort');
+    var fresherEl = document.getElementById('filterFresher');
+    var resetEl = document.getElementById('filterReset');
+    var debounce = null;
+
+    function fetchWithFilters() {
+      var params = [];
+      if (searchEl && searchEl.value.trim()) params.push('search=' + encodeURIComponent(searchEl.value.trim()));
+      if (typeEl && typeEl.value) params.push('type=' + encodeURIComponent(typeEl.value));
+      if (locEl && locEl.value.trim()) params.push('location=' + encodeURIComponent(locEl.value.trim()));
+      if (sortEl && sortEl.value) params.push('sort=' + encodeURIComponent(sortEl.value));
+      if (fresherEl && fresherEl.checked) params.push('fresher=true');
+      window.__reloadJobListings(params.join('&'));
+    }
+
+    [searchEl, typeEl, locEl, sortEl].forEach(function(el) {
+      if (!el) return;
+      el.addEventListener(el.tagName === 'INPUT' && el.type === 'text' ? 'input' : 'change', function() {
+        if (el === searchEl) {
+          clearTimeout(debounce);
+          debounce = setTimeout(fetchWithFilters, 300);
+        } else {
+          fetchWithFilters();
+        }
+      });
+    });
+    if (fresherEl) fresherEl.addEventListener('change', fetchWithFilters);
+    if (resetEl) resetEl.addEventListener('click', function() {
+      [searchEl, locEl].forEach(function(el) { if (el) el.value = ''; });
+      [typeEl, sortEl].forEach(function(el) { if (el) el.value = ''; });
+      if (fresherEl) fresherEl.checked = false;
+      fetchWithFilters();
+    });
+  }
+
   // ===== DYNAMIC JOB LISTINGS (API-powered) =====
   function initDynamicJobListings() {
     var container = document.getElementById('jobListings');
@@ -224,8 +268,33 @@
 
     if (typeof api === 'undefined') return;
 
+    // Exposed so the filter bar can re-render the list with query params
+    window.__reloadJobListings = function(queryString) {
+      container.innerHTML = '';
+      if (loader) loader.style.display = '';
+      if (emptyState) emptyState.style.display = 'none';
+      if (errorState) errorState.style.display = 'none';
+
+      api.get('/jobs' + (queryString ? '?' + queryString : ''))
+        .then(function(jobs) { renderJobs(jobs); })
+        .catch(function(err) {
+          console.error('Failed to load jobs:', err);
+          if (loader) loader.style.display = 'none';
+          if (errorState) errorState.style.display = 'flex';
+        });
+    };
+
     api.get('/jobs')
       .then(function(jobs) {
+        renderJobs(jobs);
+      })
+      .catch(function(err) {
+        console.error('Failed to load jobs:', err);
+        if (loader) loader.style.display = 'none';
+        if (errorState) errorState.style.display = 'flex';
+      });
+
+    function renderJobs(jobs) {
         if (loader) loader.style.display = 'none';
 
         if (!jobs || jobs.length === 0) {
@@ -292,12 +361,10 @@
         initCompareButtons();
         syncCompareButtons();
         renderCompareBar();
-      })
-      .catch(function(err) {
-        console.error('Failed to load jobs:', err);
         if (loader) loader.style.display = 'none';
-        if (errorState) errorState.style.display = 'flex';
-      });
+    }
+
+    initJobFilters();
   }
 
   // ===== JOB SELECTION FOR APPLY FORM =====
@@ -408,6 +475,20 @@
     if (!form) return;
 
     var loginRequired = document.getElementById('applyLoginRequired');
+
+    // Deep-link support: openings.html?apply=<jobId> (from job details page).
+    // Sync the param into the hidden input + localStorage so the correct job
+    // is applied even if a stale selectedJobId sits in localStorage.
+    try {
+      var applyParam = new URLSearchParams(window.location.search).get('apply');
+      if (applyParam) {
+        localStorage.setItem('selectedJobId', applyParam);
+        var deepHidden = document.getElementById('selectedJobId');
+        if (deepHidden) deepHidden.value = applyParam;
+        var deepSection = document.getElementById('apply-section');
+        if (deepSection) deepSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    } catch (e) { /* URLSearchParams unsupported — fall back to localStorage */ }
 
     // If user is not logged in, show login prompt instead of form
     if (typeof api !== 'undefined' && !api.isLoggedIn()) {

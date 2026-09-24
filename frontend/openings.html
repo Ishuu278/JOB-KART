@@ -48,6 +48,31 @@
     <section id="openings">
       <div class="openings-container reveal reveal-delay-2">
 
+        <!-- Search & Filter Bar -->
+        <div id="jobFiltersBar" style="display:none; background:var(--white,#fff); border:1px solid rgba(15,29,51,0.08); border-radius:16px; padding:14px 18px; margin-bottom:24px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; box-shadow:0 2px 10px rgba(15,29,51,0.04);">
+          <div style="position:relative; flex:1 1 220px; min-width:200px;">
+            <input id="filterSearch" type="text" placeholder="Search role, skill or keyword..." style="width:100%; padding:9px 14px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.88rem; outline:none; background:var(--card-bg,#fff); color:var(--text,#0F1D33);" />
+          </div>
+          <select id="filterType" style="padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.88rem; background:var(--card-bg,#fff); color:var(--text,#0F1D33);">
+            <option value="">All Types</option>
+            <option value="Full-Time">Full-Time</option>
+            <option value="Part-Time">Part-Time</option>
+            <option value="Internship">Internship</option>
+            <option value="Contract">Contract</option>
+            <option value="Remote">Remote</option>
+          </select>
+          <input id="filterLocation" type="text" placeholder="Location" style="flex:0 1 140px; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.88rem; background:var(--card-bg,#fff); color:var(--text,#0F1D33);" />
+          <select id="filterSort" style="padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.88rem; background:var(--card-bg,#fff); color:var(--text,#0F1D33);">
+            <option value="">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="salary">Top Salary</option>
+          </select>
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-muted,#5A6B87); cursor:pointer;">
+            <input id="filterFresher" type="checkbox" style="accent-color:var(--accent,#2563EB);" /> Freshers only
+          </label>
+          <button id="filterReset" type="button" style="padding:8px 16px; border:1px solid rgba(15,29,51,0.15); background:transparent; border-radius:10px; font-size:0.85rem; cursor:pointer; color:var(--text-muted,#5A6B87);">Reset</button>
+        </div>
+
         <!-- Loading Skeleton -->
         <div id="jobListingsLoader" class="job-listings-loader">
           <div class="job-skeleton">

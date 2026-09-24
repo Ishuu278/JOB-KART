@@ -1,6 +1,35 @@
 const Application = require('../models/Application');
 const Job = require('../models/Job');
 
+// Reusable helper: monthly counts for the last N months (ending current month)
+function buildMonthlySeries(match, dateField, months = 6) {
+  const start = new Date();
+  start.setDate(1);
+  start.setHours(0, 0, 0, 0);
+  start.setMonth(start.getMonth() - (months - 1));
+
+  return Application.aggregate([
+    { $match: { ...match, createdAt: { $gte: start } } },
+    {
+      $group: {
+        _id: { y: { $year: '$createdAt' }, m: { $month: '$createdAt' } },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { '_id.y': 1, '_id.m': 1 } }
+  ]).then(rows => {
+    const now = new Date();
+    const series = [];
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const row = rows.find(r => r._id.y === d.getFullYear() && r._id.m === d.getMonth() + 1);
+      series.push({ month: d.toLocaleString('en', { month: 'short' }), count: row ? row.count : 0 });
+      if (i === 0) break;
+    }
+    return series;
+  });
+}
+
 exports.applyToJob = async (req, res) => {
   try {
     const { jobId } = req.body;
@@ -61,17 +90,46 @@ exports.getRecruiterApplications = async (req, res) => {
   }
 };
 
+const VALID_STATUSES = ['applied', 'underReview', 'shortlisted', 'interview', 'selected', 'rejected'];
+
 exports.updateApplicationStatus = async (req, res) => {
   try {
-    const application = await Application.findByIdAndUpdate(
-      req.params.id,
-      { status: req.body.status },
-      { new: true }
-    );
+    const { status } = req.body;
+    if (!VALID_STATUSES.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status. Must be one of: ' + VALID_STATUSES.join(', ') });
+    }
+
+    const application = await Application.findById(req.params.id);
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
     }
+
+    // Ownership check: the job must belong to the recruiter's company
+    const job = await Job.findById(application.jobId);
+    if (!job || String(job.companyId) !== String(req.user.companyId)) {
+      return res.status(403).json({ message: 'Not authorized to update this application' });
+    }
+
+    application.status = status;
+    await application.save();
     res.json(application);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Candidate withdraws their own application
+exports.withdrawApplication = async (req, res) => {
+  try {
+    const application = await Application.findOne({
+      _id: req.params.id,
+      candidateId: req.user._id
+    });
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+    await Application.deleteOne({ _id: application._id });
+    res.json({ message: 'Application withdrawn successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -86,16 +144,7 @@ exports.getDashboardStats = async (req, res) => {
     const interviews = await Application.countDocuments({ candidateId: userId, status: 'interview' });
     const selected = await Application.countDocuments({ candidateId: userId, status: 'selected' });
 
-    const monthlyData = await Application.aggregate([
-      { $match: { candidateId: userId } },
-      {
-        $group: {
-          _id: { $month: '$createdAt' },
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { _id: 1 } }
-    ]);
+    const monthlyData = await buildMonthlySeries({ candidateId: userId });
 
     const statusData = await Application.aggregate([
       { $match: { candidateId: userId } },
@@ -128,7 +177,8 @@ exports.getRecruiterStats = async (req, res) => {
         totalApplications: 0,
         shortlisted: 0,
         pipelineData: [],
-        applicationsByJob: []
+        applicationsByJob: [],
+        hiringData: []
       });
     }
 
@@ -179,7 +229,9 @@ exports.getRecruiterStats = async (req, res) => {
       totalApplications,
       shortlisted,
       pipelineData,
-      applicationsByJob
+      applicationsByJob,
+      // Status breakdown excluding new 'applied' — drives the hiring donut chart
+      hiringData: pipelineData.filter(p => p._id !== 'applied')
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

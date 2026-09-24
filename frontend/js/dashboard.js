@@ -21,9 +21,9 @@
     charts: {
       applicationsPerMonth: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], data: [0, 0, 0, 0, 0, 0] },
       statusDistribution: {
-        labels: ['Applied', 'Under Review', 'Interview', 'Selected', 'Rejected'],
-        data: [0, 0, 0, 0, 0],
-        colors: ['#3B82F6', '#F59E0B', '#8B5CF6', '#10B981', '#EF4444']
+        labels: ['Applied', 'Under Review', 'Shortlisted', 'Interview', 'Selected', 'Rejected'],
+        data: [0, 0, 0, 0, 0, 0],
+        colors: ['#3B82F6', '#F59E0B', '#14B8A6', '#8B5CF6', '#10B981', '#EF4444']
       }
     }
   };
@@ -144,6 +144,10 @@
     var label = STATUS_LABELS[status] || status;
     var date = formatDate(app.appliedDate || app.createdAt);
 
+    var options = Object.keys(STATUS_LABELS).map(function(s) {
+      return '<option value="' + s + '"' + (s === status ? ' selected' : '') + '>' + STATUS_LABELS[s] + '</option>';
+    }).join('');
+
     return '<div class="applicant-row" data-name="' + name + '" data-role="' + jobTitle + '" data-status="' + status + '">' +
       '<img src="' + photo + '" alt="' + name + '" class="applicant-photo">' +
       '<div class="applicant-info">' +
@@ -152,6 +156,7 @@
       '</div>' +
       '<div class="applicant-date">' + date + '</div>' +
       '<span class="status-badge status-badge--' + status + '">' + label + '</span>' +
+      '<select class="applicant-status-select" data-app-id="' + (app._id || '') + '" title="Change application status">' + options + '</select>' +
     '</div>';
   }
 
@@ -167,6 +172,30 @@
     container.innerHTML = applications.map(function(app, i) {
       return renderApplicantRow(app, i);
     }).join('');
+
+    // Wire status-update dropdowns (recruiter moves candidates through the pipeline)
+    container.querySelectorAll('.applicant-status-select').forEach(function(sel) {
+      sel.addEventListener('change', function() {
+        var appId = sel.getAttribute('data-app-id');
+        var newStatus = sel.value;
+        var badge = sel.closest('.applicant-row').querySelector('.status-badge');
+        sel.disabled = true;
+        api.put('/applications/' + appId + '/status', { status: newStatus })
+          .then(function() {
+            if (badge) {
+              badge.className = 'status-badge status-badge--' + newStatus;
+              badge.textContent = STATUS_LABELS[newStatus] || newStatus;
+            }
+            sel.closest('.applicant-row').setAttribute('data-status', newStatus);
+            showToast('Status updated to "' + (STATUS_LABELS[newStatus] || newStatus) + '"', 'success');
+          })
+          .catch(function(err) {
+            sel.value = app.status; // revert on failure
+            showToast(err.message || 'Failed to update status', 'error');
+          })
+          .finally(function() { sel.disabled = false; });
+      });
+    });
 
     // Re-init search and pagination for the new rows
     initApplicantSearch();
@@ -185,6 +214,58 @@
       });
   }
 
+
+  // ===== RECRUITER: POST A JOB MODAL =====
+  function initPostJobModal() {
+    var openBtn = document.getElementById('postJobBtn');
+    var modal = document.getElementById('postJobModal');
+    if (!openBtn || !modal) return; // recruiter-only page
+
+    var closeBtn = document.getElementById('postJobClose');
+    var cancelBtn = document.getElementById('postJobCancel');
+    var form = document.getElementById('postJobForm');
+
+    function open() { modal.style.display = 'block'; document.body.style.overflow = 'hidden'; }
+    function close() { modal.style.display = 'none'; document.body.style.overflow = ''; }
+
+    openBtn.addEventListener('click', open);
+    if (closeBtn) closeBtn.addEventListener('click', close);
+    if (cancelBtn) cancelBtn.addEventListener('click', close);
+    modal.addEventListener('click', function(e) { if (e.target === modal) close(); });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') close(); });
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var fd = new FormData(form);
+      var skills = (fd.get('skills') || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+      var payload = {
+        title: fd.get('title'),
+        description: fd.get('description'),
+        type: fd.get('type'),
+        location: fd.get('location'),
+        exp: fd.get('exp'),
+        sal: fd.get('sal'),
+        skills: skills,
+        fresher: fd.get('fresher') === 'on'
+      };
+
+      var submitBtn = document.getElementById('postJobSubmit');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Publishing...';
+
+      api.post('/jobs', payload).then(function() {
+        showToast('Job published — it is now live on Openings!', 'success');
+        close();
+        form.reset();
+        setTimeout(function() { window.location.reload(); }, 900);
+      }).catch(function(err) {
+        showToast(err.message || 'Failed to publish job', 'error');
+      }).finally(function() {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Publish Job';
+      });
+    });
+  }
 
   // ===== DARK MODE =====
   function initDarkMode() {
@@ -686,6 +767,62 @@
     tbody.innerHTML = html;
   }
 
+  // ===== MY APPLICATIONS TABLE (with withdraw) =====
+  function renderMyApplications(applications) {
+    var tbody = document.querySelector('#myApplicationsTable tbody');
+    var badgeEl = document.getElementById('myAppsBadge');
+    if (!tbody) return;
+
+    if (badgeEl) badgeEl.textContent = (applications || []).length + ' total';
+
+    if (!applications || applications.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-muted);">No applications yet. <a href="openings.html" style="color:var(--accent);">Browse openings →</a></td></tr>';
+      return;
+    }
+
+    var html = '';
+    applications.forEach(function(app) {
+      var job = app.jobId || {};
+      var company = (job.companyId && typeof job.companyId === 'object') ? job.companyId : {};
+      var companyName = company.name || 'Company';
+      var companyInitials = companyName.split(' ').map(function(w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
+      var companyId = company._id || '';
+      var jobTitle = job.title || 'Position';
+      var jobId = (typeof job === 'object') ? job._id : '';
+      var status = app.status || 'applied';
+      var label = STATUS_LABELS[status] || status;
+      var date = formatDate(app.appliedDate || app.createdAt);
+
+      html += '<tr>' +
+        '<td><div class="dash-table-company"><div class="dash-table-company-logo">' + escapeHtml(companyInitials) + '</div>' +
+          '<span class="dash-table-strong">' + (companyId ? '<a href="company.html?id=' + companyId + '" style="color:inherit; text-decoration:none;">' + escapeHtml(companyName) + '</a>' : escapeHtml(companyName)) + '</span></div></td>' +
+        '<td>' + (jobId ? '<a href="job-details.html?id=' + jobId + '" style="color:inherit; text-decoration:none;">' + escapeHtml(jobTitle) + '</a>' : escapeHtml(jobTitle)) + '</td>' +
+        '<td>' + date + '</td>' +
+        '<td><span class="status-badge status-badge--' + status + '">' + label + '</span></td>' +
+        '<td>' + (status === 'applied' || status === 'underReview'
+          ? '<button class="dash-btn-sm dash-btn-sm--outline" data-withdraw-app="' + app._id + '" style="color:#DC2626; border-color:#FCA5A5;">Withdraw</button>'
+          : '<span style="color:var(--text-muted); font-size:0.82rem;">—</span>') + '</td>' +
+      '</tr>';
+    });
+    tbody.innerHTML = html;
+
+    tbody.querySelectorAll('[data-withdraw-app]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var appId = btn.getAttribute('data-withdraw-app');
+        if (!confirm('Withdraw this application? This cannot be undone.')) return;
+        api.put('/applications/mine/' + appId + '/withdraw', {})
+          .then(function() {
+            showToast('Application withdrawn', 'success');
+            btn.closest('tr').style.opacity = '0.4';
+            setTimeout(function() { window.location.reload(); }, 700);
+          })
+          .catch(function(err) {
+            showToast(err.message || 'Could not withdraw', 'error');
+          });
+      });
+    });
+  }
+
   function renderProfileCompletion(user) {
     if (!user) return;
 
@@ -931,25 +1068,28 @@
             'statSelected': d.stats.selected
           };
           Object.keys(statMap).forEach(function(id) {
-            var el = document.getElementById(id);
-            if (el) el.setAttribute('data-target', statMap[id]);
+            var card = document.getElementById(id);
+            if (card) {
+              var el = card.querySelector('.dash-stat-value') || card;
+              el.setAttribute('data-target', statMap[id]);
+            }
           });
 
-          // Update chart data
+          // Update chart data (monthlyData is a prebuilt rolling 6-month series)
           if (data.monthlyData && data.monthlyData.length > 0) {
-            var monthData = new Array(6).fill(0);
-            data.monthlyData.forEach(function(m) {
-              if (m._id >= 1 && m._id <= 6) monthData[m._id - 1] = m.count;
-            });
-            d.charts.applicationsPerMonth.data = monthData;
+            d.charts.applicationsPerMonth.labels = data.monthlyData.map(function(m) { return m.month; });
+            d.charts.applicationsPerMonth.data = data.monthlyData.map(function(m) { return m.count; });
           }
           if (data.statusData && data.statusData.length > 0) {
-            var statusMap = { applied: 0, underReview: 1, interview: 2, selected: 3, rejected: 4 };
+            var statusMap = { applied: 0, underReview: 1, shortlisted: 2, interview: 3, selected: 4, rejected: 5 };
+            // Rebuild from scratch so stale counts never linger between loads
+            var statusCounts = new Array(d.charts.statusDistribution.data.length).fill(0);
             data.statusData.forEach(function(s) {
               if (statusMap[s._id] !== undefined) {
-                d.charts.statusDistribution.data[statusMap[s._id]] = s.count;
+                statusCounts[statusMap[s._id]] = s.count;
               }
             });
+            d.charts.statusDistribution.data = statusCounts;
           }
 
           // Render timeline from real stats
@@ -962,6 +1102,7 @@
           if (applications) {
             renderActivityFeed(applications);
             renderInterviewsTable(applications);
+            renderMyApplications(applications);
           }
           renderSavedJobs();
         })
@@ -1110,8 +1251,11 @@
             'statShortlisted': d.stats.shortlisted
           };
           Object.keys(statMap).forEach(function(id) {
-            var el = document.getElementById(id);
-            if (el) el.setAttribute('data-target', statMap[id]);
+            var card = document.getElementById(id);
+            if (card) {
+              var el = card.querySelector('.dash-stat-value') || card;
+              el.setAttribute('data-target', statMap[id]);
+            }
           });
 
           if (data.pipelineData && data.pipelineData.length > 0) {
@@ -1431,6 +1575,7 @@
     initDarkMode();
     initInterviewButtons();
     initRoleToggle();
+    initPostJobModal();
 
     // Determine which dashboard to initialize
     var pageType = document.body.getAttribute('data-dashboard');

@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getCompanies, getCompanyById, getCompanyJobs, followCompany, createCompany, updateCompany } = require('../controllers/companyController');
+const { getCompanies, getCompanyNames, getCompanyById, getCompanyJobs, followCompany, createCompany, updateCompany } = require('../controllers/companyController');
 const { protect, authorize } = require('../middleware/auth');
 
 router.get('/', getCompanies);
+router.get('/names', getCompanyNames);
 router.get('/:id', getCompanyById);
 router.get('/:id/jobs', getCompanyJobs);
 router.post('/:id/follow', protect, followCompany);
