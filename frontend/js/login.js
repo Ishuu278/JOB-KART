@@ -20,16 +20,46 @@
   // Role selector
   const roleOptions = document.querySelectorAll('.role-option');
 
-  // ===== REDIRECT IF ALREADY LOGGED IN =====
-  if (typeof api !== 'undefined' && api.isLoggedIn()) {
-    const user = api.getUser();
-    if (user && user.role === 'recruiter') {
-      window.location.href = 'recruiter-dashboard.html';
-    } else {
-      window.location.href = 'candidate-dashboard.html';
-    }
-    return;
-  }
+  // ===== ALREADY LOGGED IN: show notice instead of silently bouncing =====
+  // (A silent redirect meant logged-in users could never reach the form —
+  //  so registration appeared to "just send them away" and sign-in seemed broken.)
+  (function handleExistingSession() {
+    if (typeof api === 'undefined' || !api.isLoggedIn()) return;
+    var user = api.getUser();
+    var dashUrl = (user && user.role === 'recruiter') ? 'recruiter-dashboard.html' : 'candidate-dashboard.html';
+
+    loginTabs.style.display = 'none';
+    loginForm.style.display = 'none';
+    registerForm.style.display = 'none';
+
+    var wrap = document.createElement('div');
+    wrap.id = 'sessionNotice';
+    wrap.style.cssText = 'text-align:center; padding:28px 20px;';
+    wrap.innerHTML =
+      '<div style="font-size:2rem; margin-bottom:10px;">✅</div>' +
+      '<h3 style="margin:0 0 6px; font-size:1.15rem;">You&rsquo;re already signed in</h3>' +
+      '<p id="sessionNoticeUser" style="margin:0 0 20px; opacity:0.75; font-size:0.92rem;"></p>' +
+      '<button id="sessionGoDash" style="display:block; width:100%; padding:12px; border:none; border-radius:10px; background:var(--primary,#1E3A5F); color:#fff; font-weight:600; cursor:pointer; margin-bottom:10px; font-size:0.95rem;">Go to Dashboard</button>' +
+      '<button id="sessionSwitch" style="display:block; width:100%; padding:12px; border:1px solid rgba(0,0,0,0.15); border-radius:10px; background:transparent; font-weight:600; cursor:pointer; font-size:0.95rem;">Use a different account</button>';
+    loginForm.parentElement.appendChild(wrap);
+
+    wrap.querySelector('#sessionNoticeUser').textContent =
+      (user && user.name ? user.name : 'User') + ' · ' + (user && user.email ? user.email : '');
+
+    wrap.querySelector('#sessionGoDash').addEventListener('click', function () {
+      window.location.href = dashUrl;
+    });
+
+    wrap.querySelector('#sessionSwitch').addEventListener('click', function () {
+      api.logout();
+      wrap.remove();
+      loginTabs.style.display = '';
+      loginForm.style.display = '';
+      registerForm.style.display = '';
+      switchTab('login');
+      showMessage('Signed out of the previous session. You can now sign in or create an account.', 'success');
+    });
+  })();
 
   // ===== TAB SWITCHING =====
   function switchTab(tab) {
