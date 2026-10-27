@@ -30,6 +30,7 @@
           <button class="role-toggle-btn" data-role="recruiter">Recruiter</button>
         </div>
       </li>
+      <li id="notifBellMount" style="display:flex; align-items:center;"></li>
       <li>
         <button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode">
           <span class="dark-mode-icon-moon">
@@ -83,6 +84,14 @@
             </div>
           </div>
           <div class="dash-header-right">
+            <a href="ats-scanner.html" style="display:flex; align-items:center; gap:7px; padding:9px 18px; border:1px solid var(--dash-card-border,#E2E8F0); background:var(--dash-card-bg,#fff); color:var(--dash-text,#0F1D33); border-radius:999px; font-size:0.82rem; font-weight:700; cursor:pointer; text-decoration:none;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 4 5-8"/></svg>
+              ATS SCAN
+            </a>
+            <button id="editProfileBtn" style="display:flex; align-items:center; gap:7px; padding:9px 18px; border:1px solid var(--dash-card-border,#E2E8F0); background:var(--dash-card-bg,#fff); color:var(--dash-text,#0F1D33); border-radius:999px; font-size:0.82rem; font-weight:700; cursor:pointer;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              MY PROFILE
+            </button>
             <div class="dash-date">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               <span id="dashDate"></span>
@@ -365,9 +374,105 @@
     </div>
   </footer>
 
+  <!-- ===== MY PROFILE MODAL ===== -->
+  <div id="profileModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(10,20,40,0.55); backdrop-filter:blur(3px);">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:min(680px, calc(100vw - 32px)); max-height:90vh; overflow-y:auto; background:var(--dash-card-bg,#fff); border-radius:18px; padding:28px 30px; box-shadow:0 24px 64px rgba(10,20,40,0.25); color:var(--dash-text,#0F1D33);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <h2 style="margin:0; font-size:1.25rem;">My Profile</h2>
+        <button id="profileClose" style="border:none; background:transparent; font-size:1.4rem; cursor:pointer; color:var(--dash-text-muted,#5A6B87); line-height:1;">×</button>
+      </div>
+      <p style="margin:0 0 18px; font-size:0.85rem; color:var(--dash-text-muted,#5A6B87);">Update your details, set a profile photo, or upload your resume to auto-fill skills.</p>
+
+      <div style="display:flex; gap:22px; align-items:flex-start; flex-wrap:wrap;">
+        <!-- Avatar + photo upload -->
+        <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div id="pmAvatarWrap" style="position:relative; width:96px; height:96px; cursor:pointer;" title="Click to change photo">
+            <div id="pmAvatar" style="width:96px; height:96px; border-radius:50%; background:linear-gradient(135deg,#2563EB,#1E40AF); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.8rem; font-weight:700; overflow:hidden;">
+              <span id="pmInitials">?</span>
+              <img id="pmAvatarImg" alt="" style="display:none; width:100%; height:100%; object-fit:cover; position:absolute; inset:0;" />
+            </div>
+            <div style="position:absolute; inset:0; border-radius:50%; background:rgba(10,20,40,0.55); color:#fff; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .18s; font-size:0.68rem; font-weight:700; text-align:center;">CHANGE<br/>PHOTO</div>
+          </div>
+          <input type="file" id="pmPhotoInput" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+          <span id="pmPhotoStatus" style="font-size:0.72rem; color:var(--dash-text-muted,#5A6B87);">JPG/PNG · max 3 MB</span>
+        </div>
+
+        <!-- Resume upload -->
+        <div style="flex:1; min-width:240px;">
+          <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:6px;">Resume</label>
+          <div id="pmResumeDrop" style="border:2px dashed var(--dash-card-border,#CBD5E1); border-radius:12px; padding:16px; text-align:center; cursor:pointer; transition:border-color .15s, background .15s;">
+            <div style="font-size:1.4rem;">📄</div>
+            <div id="pmResumeText" style="font-size:0.82rem; margin-top:4px; color:var(--dash-text-muted,#5A6B87);">Drag & drop your PDF here, or click to browse</div>
+            <div style="font-size:0.7rem; margin-top:3px; color:var(--dash-text-muted,#5A6B87);">PDF only · max 5 MB · skills auto-fill from it</div>
+          </div>
+          <input type="file" id="pmResumeInput" accept="application/pdf,.pdf" style="display:none;" />
+          <div id="pmResumeResult" style="display:none; margin-top:10px; padding:12px 14px; border-radius:10px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.35); font-size:0.8rem;"></div>
+        </div>
+      </div>
+
+      <form id="profileForm" style="margin-top:20px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <label style="display:block; font-size:0.78rem; font-weight:600; margin-bottom:5px;">Full Name *</label>
+            <input name="name" required style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--dash-bg,#F6F8FC); color:inherit;" />
+          </div>
+          <div>
+            <label style="display:block; font-size:0.78rem; font-weight:600; margin-bottom:5px;">Phone</label>
+            <input name="phone" placeholder="+91 98765 43210" style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--dash-bg,#F6F8FC); color:inherit;" />
+          </div>
+          <div style="grid-column:1 / -1;">
+            <label style="display:block; font-size:0.78rem; font-weight:600; margin-bottom:5px;">Skills (comma separated)</label>
+            <input name="skills" placeholder="React, Node.js, Figma" style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--dash-bg,#F6F8FC); color:inherit;" />
+          </div>
+          <div>
+            <label style="display:block; font-size:0.78rem; font-weight:600; margin-bottom:5px;">Experience</label>
+            <input name="experience" placeholder="e.g. 2 years at TCS" style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--dash-bg,#F6F8FC); color:inherit;" />
+          </div>
+          <div>
+            <label style="display:block; font-size:0.78rem; font-weight:600; margin-bottom:5px;">Education</label>
+            <input name="education" placeholder="e.g. B.Tech CSE, KIIT 2026" style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--dash-bg,#F6F8FC); color:inherit;" />
+          </div>
+          <div style="grid-column:1 / -1;">
+            <label style="display:block; font-size:0.78rem; font-weight:600; margin-bottom:5px;">Portfolio / GitHub URL</label>
+            <input name="portfolioUrl" placeholder="https://github.com/you" style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--dash-bg,#F6F8FC); color:inherit;" />
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:18px;">
+          <button type="button" id="profileCancel" style="padding:10px 20px; border:1px solid rgba(15,29,51,0.15); background:transparent; border-radius:10px; cursor:pointer; font-size:0.88rem; color:var(--dash-text-muted,#5A6B87);">Cancel</button>
+          <button type="submit" id="profileSaveBtn" style="padding:10px 24px; border:none; background:#2563EB; color:#fff; border-radius:10px; cursor:pointer; font-size:0.88rem; font-weight:600;">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== MESSAGES PANEL (candidate chat) ===== -->
+  <div id="candChatPanel" style="display:none; position:fixed; right:24px; bottom:24px; width:400px; max-width:calc(100vw - 32px); height:560px; max-height:calc(100vh - 48px); background:var(--dash-card-bg,#fff); border:1px solid var(--dash-card-border,#E2E8F0); border-radius:16px; box-shadow:0 24px 64px rgba(10,20,40,0.25); z-index:9998; flex-direction:column; overflow:hidden; color:var(--dash-text,#0F1D33);">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:#2563EB; color:#fff;">
+      <strong style="font-size:0.92rem;">Messages</strong>
+      <button id="candChatClose" style="border:none; background:transparent; color:#fff; font-size:1.3rem; cursor:pointer; line-height:1;">×</button>
+    </div>
+    <div id="candChatList" style="flex:1; overflow-y:auto; padding:8px; background:var(--dash-bg,#F6F8FC);"></div>
+    <div id="candChatThread" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
+      <div style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid var(--dash-card-border,#EDF2F7);">
+        <button id="candChatBack" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:var(--dash-text,#0F1D33);">←</button>
+        <strong id="candChatThreadTitle" style="font-size:0.85rem;"></strong>
+      </div>
+      <div id="candChatMessages" style="flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:8px; background:var(--dash-bg,#F6F8FC);"></div>
+      <div id="candChatTyping" style="display:none; padding:2px 16px 6px; font-size:0.72rem; color:var(--dash-text-muted,#5A6B87); font-style:italic;"></div>
+      <div style="display:flex; gap:8px; padding:12px; border-top:1px solid var(--dash-card-border,#EDF2F7);">
+        <input id="candChatInput" placeholder="Type a message..." maxlength="2000" style="flex:1; padding:10px 14px; border:1px solid rgba(15,29,51,0.15); border-radius:99px; font-size:0.88rem; background:var(--dash-bg,#F6F8FC); color:inherit; outline:none;" />
+        <button id="candChatSend" style="padding:10px 18px; border:none; background:#2563EB; color:#fff; border-radius:99px; cursor:pointer; font-weight:700; font-size:0.85rem;">Send</button>
+      </div>
+    </div>
+  </div>
+  <button id="candChatFab" title="Messages" style="display:none; position:fixed; right:24px; bottom:24px; width:56px; height:56px; border-radius:50%; border:none; background:#2563EB; color:#fff; cursor:pointer; box-shadow:0 12px 32px rgba(37,99,235,0.4); z-index:9997; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span id="candChatFabBadge" style="display:none; position:absolute; top:-3px; right:-3px; min-width:18px; height:18px; padding:0 4px; border-radius:99px; background:#EF4444; color:#fff; font-size:0.65rem; font-weight:800; align-items:center; justify-content:center;"></span></button>
+
   <script src="js/api.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/socket.js"></script>
   <script src="js/main.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="js/notifications-ui.js"></script>
   <script src="js/dashboard.js"></script>
 </body>
 </html>

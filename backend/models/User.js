@@ -40,6 +40,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  resumeText: {
+    type: String,
+    default: ''
+  },
   skills: [{
     type: String
   }],
@@ -58,6 +62,18 @@ const userSchema = new mongoose.Schema({
   profileCompletion: {
     type: Number,
     default: 0
+  },
+  savedJobs: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Job'
+  }],
+  isOnline: {
+    type: Boolean,
+    default: false
+  },
+  lastSeen: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true

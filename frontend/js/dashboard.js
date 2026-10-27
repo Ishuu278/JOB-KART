@@ -97,7 +97,20 @@
     if (!user) return;
     var avatarEl = document.getElementById('dashAvatar');
     var welcomeEl = document.getElementById('dashWelcome');
-    if (avatarEl) avatarEl.textContent = getInitials(user.name);
+    if (avatarEl) {
+      avatarEl.textContent = getInitials(user.name);
+      // Show the uploaded photo if present
+      if (user.profilePhoto) {
+        avatarEl.style.backgroundImage = 'url(' + user.profilePhoto + ')';
+        avatarEl.style.backgroundSize = 'cover';
+        avatarEl.style.backgroundPosition = 'center';
+        avatarEl.style.color = 'transparent';
+        avatarEl.textContent = '';
+      } else {
+        avatarEl.style.backgroundImage = '';
+        avatarEl.style.color = '';
+      }
+    }
     if (welcomeEl) welcomeEl.textContent = 'Welcome back, ' + user.name.split(' ')[0];
   }
 
@@ -106,6 +119,7 @@
     underReview: 'Under Review',
     shortlisted: 'Shortlisted',
     interview: 'Interview',
+    interviewScheduled: 'Interview Scheduled',
     selected: 'Selected',
     rejected: 'Rejected'
   };
@@ -160,18 +174,30 @@
     '</div>';
   }
 
-  function renderApplicantList(applications) {
+  function renderApplicantList(applications, meta) {
     var container = document.getElementById('applicantList');
     if (!container) return;
+    meta = meta || {};
 
     if (!applications || applications.length === 0) {
-      container.innerHTML = '<div style="text-align:center; padding:32px 16px; color:var(--text-muted);">No applications found</div>';
+      if (!__applicantsAppend) {
+        container.innerHTML = '<div style="text-align:center; padding:32px 16px; color:var(--text-muted);">No applications found</div>';
+      }
       return;
     }
 
-    container.innerHTML = applications.map(function(app, i) {
+    var html = applications.map(function(app, i) {
       return renderApplicantRow(app, i);
     }).join('');
+
+    if (__applicantsAppend) {
+      // strip an old Load More row before appending
+      var oldMore = container.querySelector('.applicants-load-more');
+      if (oldMore) oldMore.remove();
+      container.insertAdjacentHTML('beforeend', html);
+    } else {
+      container.innerHTML = html;
+    }
 
     // Wire status-update dropdowns (recruiter moves candidates through the pipeline)
     container.querySelectorAll('.applicant-status-select').forEach(function(sel) {
@@ -200,14 +226,38 @@
     // Re-init search and pagination for the new rows
     initApplicantSearch();
     updatePagination();
+
+    // Load More (server-side pagination)
+    var oldWrap = container.querySelector('.applicants-load-more');
+    if (oldWrap) oldWrap.remove();
+    if (meta.hasMore) {
+      var wrap = document.createElement('div');
+      wrap.className = 'applicants-load-more';
+      wrap.style.cssText = 'text-align:center; padding:14px;';
+      wrap.innerHTML = '<button style="padding:9px 26px; border:1px solid var(--dash-card-border,#E2E8F0); background:var(--dash-bg,#F6F8FC); color:var(--dash-text,#0F1D33); border-radius:999px; font-weight:700; font-size:0.8rem; cursor:pointer;">Load More Applicants</button>';
+      container.appendChild(wrap);
+      wrap.querySelector('button').addEventListener('click', function () {
+        this.textContent = 'Loading…';
+        this.disabled = true;
+        __applicantsPage += 1;
+        __applicantsAppend = true;
+        fetchAndRenderApplicants(); // NO reset — advance to next page
+      });
+    }
+    __applicantsAppend = false;
   }
 
-  function fetchAndRenderApplicants() {
-    if (typeof api === 'undefined' || !api.isLoggedIn()) return;
+  var __applicantsPage = 1;
+  var __applicantsAppend = false;
+  var APPLICANT_PAGE_SIZE = 8;
 
-    api.get('/applications/recruiter?limit=50')
+  function fetchAndRenderApplicants(reset) {
+    if (typeof api === 'undefined' || !api.isLoggedIn()) return;
+    if (reset) { __applicantsPage = 1; __applicantsAppend = false; }
+
+    api.get('/applications/all?page=' + __applicantsPage + '&limit=' + APPLICANT_PAGE_SIZE)
       .then(function(data) {
-        renderApplicantList(data.applications);
+        renderApplicantList(data.applications || [], data);
       })
       .catch(function() {
         // Silently fail — keep whatever is on screen
@@ -265,6 +315,249 @@
         submitBtn.textContent = 'Publish Job';
       });
     });
+  }
+
+  // ===== MY PROFILE MODAL (candidate) =====
+  function initProfileModal() {
+    var openBtn = document.getElementById('editProfileBtn');
+    var modal = document.getElementById('profileModal');
+    if (!modal) return; // candidate-only page
+
+    var avatarWrap = document.getElementById('pmAvatarWrap');
+    var avatarImg = document.getElementById('pmAvatarImg');
+    var initialsEl = document.getElementById('pmInitials');
+    var photoInput = document.getElementById('pmPhotoInput');
+    var photoStatus = document.getElementById('pmPhotoStatus');
+    var resumeDrop = document.getElementById('pmResumeDrop');
+    var resumeInput = document.getElementById('pmResumeInput');
+    var resumeText = document.getElementById('pmResumeText');
+    var resumeResult = document.getElementById('pmResumeResult');
+    var form = document.getElementById('profileForm');
+    var saveBtn = document.getElementById('profileSaveBtn');
+    var closeBtn = document.getElementById('profileClose');
+    var cancelBtn = document.getElementById('profileCancel');
+
+    function currentUser() { return (typeof api !== 'undefined' && api.getUser()) || {}; }
+
+    function open() {
+      var user = currentUser();
+      // Fill form
+      form.elements['name'].value = user.name || '';
+      form.elements['phone'].value = user.phone || '';
+      form.elements['skills'].value = (user.skills || []).join(', ');
+      form.elements['experience'].value = user.experience || '';
+      form.elements['education'].value = user.education || '';
+      form.elements['portfolioUrl'].value = user.portfolioUrl || '';
+      // Fill avatar
+      if (user.profilePhoto) {
+        avatarImg.src = user.profilePhoto;
+        avatarImg.style.display = 'block';
+        initialsEl.style.display = 'none';
+      } else {
+        avatarImg.style.display = 'none';
+        initialsEl.style.display = 'block';
+        initialsEl.textContent = getInitials(user.name);
+      }
+      // Fill resume line
+      updateResumeLine(user);
+      resumeResult.style.display = 'none';
+      modal.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function updateResumeLine(user) {
+      if (user && user.resume) {
+        var fname = user.resume.split('/').pop().replace(/^resume-\d+-[0-9a-f]+-?/, '');
+        resumeText.innerHTML = '✅ Resume uploaded — <a href="' + user.resume + '" target="_blank" style="color:#2563EB; font-weight:600;">view current file</a> · click to replace';
+      } else {
+        resumeText.textContent = 'Drag & drop your PDF here, or click to browse';
+      }
+    }
+
+    function close() {
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    if (openBtn) openBtn.addEventListener('click', open);
+    if (closeBtn) closeBtn.addEventListener('click', close);
+    if (cancelBtn) cancelBtn.addEventListener('click', close);
+    modal.addEventListener('click', function(e) { if (e.target === modal) close(); });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') close(); });
+    if (avatarWrap) avatarWrap.addEventListener('click', function() { photoInput.click(); });
+    if (resumeDrop) {
+      resumeDrop.addEventListener('click', function() { resumeInput.click(); });
+      ['dragover', 'dragenter'].forEach(function(ev) {
+        resumeDrop.addEventListener(ev, function(e) {
+          e.preventDefault();
+          resumeDrop.style.borderColor = '#2563EB';
+          resumeDrop.style.background = 'rgba(37,99,235,0.05)';
+        });
+      });
+      ['dragleave', 'drop'].forEach(function(ev) {
+        resumeDrop.addEventListener(ev, function(e) {
+          e.preventDefault();
+          resumeDrop.style.borderColor = '';
+          resumeDrop.style.background = '';
+        });
+      });
+      resumeDrop.addEventListener('drop', function(e) {
+        var files = e.dataTransfer && e.dataTransfer.files;
+        if (files && files[0]) uploadResumeFile(files[0]);
+      });
+    }
+    if (resumeInput) resumeInput.addEventListener('change', function() {
+      if (resumeInput.files && resumeInput.files[0]) uploadResumeFile(resumeInput.files[0]);
+    });
+    if (photoInput) photoInput.addEventListener('change', function() {
+      if (photoInput.files && photoInput.files[0]) uploadPhotoFile(photoInput.files[0]);
+    });
+
+    // ---- photo upload ----
+    function uploadPhotoFile(file) {
+      if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+        showToast('Only JPG, PNG or WebP images are allowed', 'error');
+        return;
+      }
+      if (file.size > 3 * 1024 * 1024) {
+        showToast('Photo too large — max 3 MB', 'error');
+        return;
+      }
+      photoStatus.textContent = 'Uploading…';
+      var fd = new FormData();
+      fd.append('photo', file);
+      var token = api.getToken();
+      fetch('/api/auth/photo', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d }; }); })
+        .then(function(res) {
+          if (!res.ok) throw new Error(res.d.message || 'Upload failed');
+          var user = api.getUser() || {};
+          user.profilePhoto = res.d.profilePhoto;
+          api.setUser(user);
+          avatarImg.src = res.d.profilePhoto;
+          avatarImg.style.display = 'block';
+          initialsEl.style.display = 'none';
+          photoStatus.textContent = 'Photo updated ✓';
+          populateDashboardHeader(user);
+          showToast('Profile photo updated', 'success');
+        })
+        .catch(function(err) {
+          photoStatus.textContent = 'JPG/PNG · max 3 MB';
+          showToast(err.message || 'Photo upload failed', 'error');
+        });
+    }
+
+    // ---- resume upload ----
+    function uploadResumeFile(file) {
+      if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) {
+        showToast('Please choose a PDF file', 'error');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Resume too large — max 5 MB', 'error');
+        return;
+      }
+      resumeText.innerHTML = '<span style="font-weight:600;">Parsing ' + file.name.replace(/</g, '&lt;') + '…</span>';
+      resumeResult.style.display = 'none';
+      var fd = new FormData();
+      fd.append('resume', file);
+      var token = api.getToken();
+      fetch('/api/auth/resume', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d }; }); })
+        .then(function(res) {
+          if (!res.ok) throw new Error(res.d.message || 'Upload failed');
+          var d = res.d;
+          var user = api.getUser() || {};
+          user.resume = d.resume;
+          user.skills = d.user.skills;
+          user.phone = d.user.phone;
+          user.education = d.user.education;
+          user.profileCompletion = d.profileCompletion;
+          api.setUser(user);
+          updateResumeLine(user);
+          // show what was extracted
+          var ex = d.extracted || {};
+          var html = '<strong>' + (ex.failed ? 'Resume saved, but no readable text was found (scanned PDF?)' : 'Profile updated from your resume!') + '</strong>';
+          if (ex.newSkills && ex.newSkills.length) {
+            html += '<div style="margin-top:6px;">New skills added: ' + ex.newSkills.map(escapeHtml).join(', ') + '</div>';
+          }
+          var filled = [];
+          if (ex.updated) {
+            if (ex.updated.name) filled.push('name');
+            if (ex.updated.phone) filled.push('phone');
+            if (ex.updated.education) filled.push('education');
+          }
+          if (filled.length) html += '<div style="margin-top:3px;">Also filled: ' + filled.join(', ') + '</div>';
+          html += '<div style="margin-top:6px; font-weight:700;">Profile completion: ' + d.profileCompletion + '%</div>';
+          resumeResult.innerHTML = html;
+          resumeResult.style.display = 'block';
+          // refresh form fields with merged data
+          form.elements['skills'].value = (d.user.skills || []).join(', ');
+          if (!form.elements['phone'].value) form.elements['phone'].value = d.user.phone || '';
+          if (!form.elements['education'].value) form.elements['education'].value = d.user.education || '';
+          renderCompletionRing(d.profileCompletion);
+          showToast(d.message, 'success');
+        })
+        .catch(function(err) {
+          resumeText.textContent = 'Drag & drop your PDF here, or click to browse';
+          showToast(err.message || 'Resume upload failed', 'error');
+        });
+    }
+
+    // ---- manual profile save ----
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var skills = form.elements['skills'].value.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+      var payload = {
+        name: form.elements['name'].value.trim(),
+        phone: form.elements['phone'].value.trim(),
+        skills: skills,
+        experience: form.elements['experience'].value.trim(),
+        education: form.elements['education'].value.trim(),
+        portfolioUrl: form.elements['portfolioUrl'].value.trim()
+      };
+      if (!payload.name) {
+        showToast('Name is required', 'error');
+        return;
+      }
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+      api.put('/auth/profile', payload)
+        .then(function(updated) {
+          var user = api.getUser() || {};
+          user.name = updated.name;
+          user.phone = updated.phone;
+          user.skills = updated.skills || [];
+          user.experience = updated.experience;
+          user.education = updated.education;
+          user.portfolioUrl = updated.portfolioUrl;
+          user.profileCompletion = updated.profileCompletion;
+          api.setUser(user);
+          populateDashboardHeader(user);
+          initialsEl.textContent = getInitials(user.name);
+          renderCompletionRing(updated.profileCompletion);
+          showToast('Profile saved — completion ' + updated.profileCompletion + '%', 'success');
+          close();
+        })
+        .catch(function(err) {
+          showToast(err.message || 'Could not save profile', 'error');
+        })
+        .finally(function() {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Changes';
+        });
+    });
+  }
+
+  // Update the completion ring + suggestions with a given percent
+  function renderCompletionRing(pct) {
+    var ring = document.querySelector('.profile-ring-fill');
+    var ringText = document.querySelector('.profile-ring-text');
+    var badgeEl = document.querySelector('.dash-card-badge');
+    if (ring) ring.setAttribute('data-percent', pct);
+    if (ringText) ringText.textContent = pct + '%';
+    if (badgeEl) badgeEl.textContent = pct + '%';
+    animateProfileRing();
   }
 
   // ===== DARK MODE =====
@@ -1290,7 +1583,7 @@
     }
 
     // Fetch real applicant list from API and render activity
-    fetchAndRenderApplicants();
+    fetchAndRenderApplicants(true);
 
     // Also fetch applications for activity feed
     if (typeof api !== 'undefined' && api.isLoggedIn()) {
@@ -1334,7 +1627,7 @@
     // Refresh data when user returns to the tab
     document.addEventListener('visibilitychange', function() {
       if (!document.hidden && document.body.getAttribute('data-dashboard') === 'recruiter') {
-        fetchAndRenderApplicants();
+        fetchAndRenderApplicants(true);
       }
     });
   }
@@ -1343,7 +1636,7 @@
     stopRecruiterPolling();
     recruiterPollTimer = setInterval(function() {
       if (document.hidden) return; // Skip if tab is not visible
-      fetchAndRenderApplicants();
+      fetchAndRenderApplicants(true);
     }, 30000);
   }
 
@@ -1417,22 +1710,10 @@
   }
 
   function updatePagination() {
-    var rows = document.querySelectorAll('.applicant-row');
-    var visibleRows = Array.prototype.filter.call(rows, function(r) {
-      return r.style.display !== 'none';
-    });
-
-    if (visibleRows.length <= itemsPerPage) {
-      var pagEl = document.getElementById('applicantPagination');
-      if (pagEl) pagEl.style.display = 'none';
-      // Show all visible rows
-      visibleRows.forEach(function(r) { r.style.display = ''; });
-      return;
-    }
-
-    currentPage = 1;
-    showPage(1);
-    renderPaginationButtons();
+    // Server-side pagination (Load More) replaced the legacy client pager —
+    // keep search filtering, but never hide rows here.
+    var pagEl = document.getElementById('applicantPagination');
+    if (pagEl) pagEl.style.display = 'none';
   }
 
   function showPage(page) {
@@ -1576,15 +1857,668 @@
     initInterviewButtons();
     initRoleToggle();
     initPostJobModal();
+    initProfileModal();
+
+    // Real-time: connect socket + mount notification bell
+    if (window.JobKartSocket) JobKartSocket.initFromStorage();
+    if (window.JobKartNotifs) JobKartNotifs.mount('notifBellMount');
+
+    // Recruiter pipeline UI
+    initRecruiterPipeline();
+    initStageModal();
+    initChatPanel();
+    initCandidateProfileModal();
+    initSavedLeads();
 
     // Determine which dashboard to initialize
     var pageType = document.body.getAttribute('data-dashboard');
 
     if (pageType === 'candidate') {
       initCandidateDashboard();
+      initCandidateRealtime();
     } else if (pageType === 'recruiter') {
       initRecruiterDashboard();
+      initRecruiterRealtime();
     }
+  }
+
+  // ===== REAL-TIME (candidate) =====
+  function initCandidateRealtime() {
+    if (!window.JobKartSocket) return;
+    JobKartSocket.on('status:updated', function (data) {
+      showToast('Update: Your application for "' + (data.jobTitle || 'a job') + '" is now ' + (STATUS_LABELS[data.newStatus] || data.newStatus) + '!', 'success');
+      // re-pull stats + applications so timeline/tables reflect the change live
+      if (typeof initCandidateDashboard === 'function') initCandidateDashboard();
+    });
+    JobKartSocket.on('message:new', function (data) {
+      var panelOpen = document.getElementById('candChatPanel') && document.getElementById('candChatPanel').style.display === 'flex';
+      if (panelOpen && window.__candConv === data.message.conversationId) {
+        appendCandBubble(data.message, false);
+        api.put('/messages/' + data.message.conversationId + '/read', {}).catch(function () {});
+      } else {
+        showToast('💬 New message from ' + (data.sender && data.sender.name ? data.sender.name : 'recruiter'), 'info');
+        refreshCandChatBadge();
+      }
+    });
+    JobKartSocket.on('typing:start', function (d) {
+      if (window.__candConv === d.conversationId) {
+        var el = document.getElementById('candChatTyping');
+        if (el) { el.textContent = 'Recruiter is typing…'; el.style.display = 'block'; }
+      }
+    });
+    JobKartSocket.on('typing:stop', function (d) {
+      if (window.__candConv === d.conversationId) {
+        var el = document.getElementById('candChatTyping');
+        if (el) el.style.display = 'none';
+      }
+    });
+
+    initCandChatUI();
+  }
+
+  // ===== CANDIDATE MESSAGES UI =====
+  function escHtmlC(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function candBubble(m, mine) {
+    var time = new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return '<div style="align-self:' + (mine ? 'flex-end' : 'flex-start') + '; max-width:80%;">' +
+      '<div style="padding:8px 12px; border-radius:14px; font-size:0.84rem; line-height:1.35; ' +
+        (mine ? 'background:#2563EB; color:#fff; border-bottom-right-radius:4px;' : 'background:var(--dash-card-bg,#fff); border:1px solid var(--dash-card-border,#E2E8F0); border-bottom-left-radius:4px;') + '">' +
+        escHtmlC(m.text) + '</div>' +
+      '<div style="font-size:0.62rem; color:var(--dash-text-muted,#5A6B87); margin-top:2px; text-align:' + (mine ? 'right' : 'left') + ';">' + time + (m.read && mine ? ' ✓✓' : '') + '</div>' +
+    '</div>';
+  }
+
+  function appendCandBubble(m, mine) {
+    var box = document.getElementById('candChatMessages');
+    if (!box) return;
+    box.insertAdjacentHTML('beforeend', candBubble(m, mine));
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function refreshCandChatBadge() {
+    api.get('/messages/conversations')
+      .then(function (d) {
+        var unread = (d.conversations || []).reduce(function (s, c) { return s + (c.unread || 0); }, 0);
+        var fab = document.getElementById('candChatFab');
+        var badge = document.getElementById('candChatFabBadge');
+        if (fab) fab.style.display = 'flex';
+        if (badge) {
+          if (unread > 0) { badge.style.display = 'flex'; badge.textContent = unread; }
+          else badge.style.display = 'none';
+        }
+      })
+      .catch(function () {});
+  }
+
+  function initCandChatUI() {
+    var fab = document.getElementById('candChatFab');
+    var panel = document.getElementById('candChatPanel');
+    if (!fab || !panel) return;
+
+    fab.addEventListener('click', function () {
+      panel.style.display = 'flex';
+      fab.style.display = 'none';
+      window.__candConv = null;
+      document.getElementById('candChatThread').style.display = 'none';
+      document.getElementById('candChatList').style.display = 'block';
+      loadCandConversations();
+    });
+
+    document.getElementById('candChatClose').addEventListener('click', function () {
+      panel.style.display = 'none';
+      fab.style.display = 'flex';
+      window.__candConv = null;
+      refreshCandChatBadge();
+    });
+
+    document.getElementById('candChatBack').addEventListener('click', function () {
+      window.__candConv = null;
+      document.getElementById('candChatThread').style.display = 'none';
+      document.getElementById('candChatList').style.display = 'block';
+      loadCandConversations();
+    });
+
+    var send = function () {
+      var input = document.getElementById('candChatInput');
+      var text = input.value.trim();
+      if (!text || !window.__candConv) return;
+      api.post('/messages', { conversationId: window.__candConv, text: text })
+        .then(function (msg) {
+          input.value = '';
+          appendCandBubble(msg.toObject ? msg.toObject() : msg, true);
+        })
+        .catch(function (err) { showToast(err.message || 'Could not send', 'error'); });
+    };
+    document.getElementById('candChatSend').addEventListener('click', send);
+    document.getElementById('candChatInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') send(); });
+
+    var typingTimer = null;
+    document.getElementById('candChatInput').addEventListener('input', function () {
+      if (!window.__candConv || !window.__candPeer) return;
+      JobKartSocket.emit('typing:start', { conversationId: window.__candConv, to: window.__candPeer });
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(function () {
+        JobKartSocket.emit('typing:stop', { conversationId: window.__candConv, to: window.__candPeer });
+      }, 1200);
+    });
+
+    refreshCandChatBadge();
+    setInterval(refreshCandChatBadge, 30000); // periodic badge refresh
+  }
+
+  function loadCandConversations() {
+    api.get('/messages/conversations')
+      .then(function (d) {
+        var list = document.getElementById('candChatList');
+        var convs = d.conversations || [];
+        if (!convs.length) {
+          list.innerHTML = '<div style="text-align:center; padding:40px 16px; color:var(--dash-text-muted,#5A6B87); font-size:0.86rem;">No conversations yet.<br/><span style="font-size:0.76rem;">Apply to a job — the recruiter can then message you about it.</span></div>';
+          return;
+        }
+        list.innerHTML = convs.map(function (c) {
+          return '<div class="cand-conv" data-conv="' + c.conversationId + '" data-job="' + escHtmlC(c.job ? c.job.title : '') + '" style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 14px; border-radius:12px; cursor:pointer; margin-bottom:4px;">' +
+            '<div style="min-width:0;">' +
+              '<div style="font-size:0.84rem; font-weight:700;">' + escHtmlC(c.job ? c.job.title : 'Conversation') + '</div>' +
+              '<div style="font-size:0.74rem; color:var(--dash-text-muted,#5A6B87); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:230px;">' + escHtmlC(c.lastMessage || '') + '</div>' +
+            '</div>' +
+            (c.unread ? '<span style="flex-shrink:0; min-width:20px; height:20px; padding:0 6px; border-radius:99px; background:#EF4444; color:#fff; font-size:0.68rem; font-weight:800; display:flex; align-items:center; justify-content:center;">' + c.unread + '</span>' : '') +
+          '</div>';
+        }).join('');
+
+        list.querySelectorAll('.cand-conv').forEach(function (el) {
+          el.addEventListener('click', function () {
+            var convId = el.getAttribute('data-conv');
+            var jobTitle = el.getAttribute('data-job');
+            window.__candConv = convId;
+            window.__candPeer = convId.split('_')[1] ? undefined : undefined; // recruiter id resolved server-side
+            // resolve recruiter id for typing events
+            api.get('/messages/' + convId).then(function (hist) {
+              var recruiterUserId = null;
+              (hist.messages || []).forEach(function (m) {
+                var me = api.getUser();
+                if (String(m.senderId) !== String(me._id)) recruiterUserId = m.senderId;
+              });
+              window.__candPeer = recruiterUserId;
+            });
+
+            document.getElementById('candChatList').style.display = 'none';
+            document.getElementById('candChatThread').style.display = 'flex';
+            document.getElementById('candChatThreadTitle').textContent = jobTitle || 'Chat';
+            document.getElementById('candChatMessages').innerHTML = '';
+            api.get('/messages/' + convId)
+              .then(function (h) {
+                var me = api.getUser();
+                (h.messages || []).forEach(function (m) {
+                  appendCandBubble(m, String(m.senderId) === String(me._id));
+                });
+              });
+            api.put('/messages/' + convId + '/read', {}).catch(function () {});
+            refreshCandChatBadge();
+          });
+        });
+      })
+      .catch(function () {});
+  }
+
+  // ===== RECRUITER: PIPELINE BOARD + STAGE MODAL + CHAT =====
+  var PIPELINE_STAGES = ['applied', 'underReview', 'shortlisted', 'interviewScheduled', 'selected', 'rejected'];
+  var STAGE_COLORS = {
+    applied: '#64748B', underReview: '#F59E0B', shortlisted: '#2563EB',
+    interviewScheduled: '#8B5CF6', selected: '#10B981', rejected: '#EF4444'
+  };
+  // Quiet accents for Kanban column rules — desaturated, professional
+  var STAGE_ACCENTS = {
+    applied: '#94A3B8',
+    underReview: '#D97706',
+    shortlisted: '#0891B2',
+    interviewScheduled: '#7C3AED',
+    selected: '#059669',
+    rejected: '#DC2626'
+  };
+  var __pipelineApps = [];
+  var __onlineUsers = {}; // userId → true (live presence from socket)
+  var __chatConv = null; // { conversationId, candidateName, peerId }
+
+  function initRecruiterPipeline() {
+    var board = document.getElementById('kanbanBoard');
+    if (!board) return;
+    api.get('/applications/all?limit=200')
+      .then(function (data) {
+        __pipelineApps = data.applications || [];
+        renderKanban();
+      })
+      .catch(function () {});
+  }
+
+  function renderKanban() {
+    var board = document.getElementById('kanbanBoard');
+    if (!board) return;
+    var totalBadge = document.getElementById('pipelineTotalBadge');
+    if (totalBadge) totalBadge.textContent = __pipelineApps.length + ' applicants';
+
+    var ICON_ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+    var ICON_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+
+    board.innerHTML = PIPELINE_STAGES.map(function (stage) {
+      var apps = __pipelineApps.filter(function (a) { return a.status === stage; });
+      var cards = apps.slice(0, 6).map(function (a) {
+        var cand = a.candidateId || {};
+        var job = a.jobId || {};
+        var jobTitle = typeof job === 'object' ? job.title : 'Job';
+        var isOnline = __onlineUsers[String(cand._id)] || cand.isOnline || false;
+        var avatar = cand.profilePhoto
+          ? '<img src="' + cand.profilePhoto + '" alt="" />'
+          : escHtml(initialsOf(cand.name));
+        return '<div class="kcard" data-app-id="' + a._id + '" data-cand-id="' + (cand._id || '') + '">' +
+          '<div class="kcard-head">' +
+            '<div class="kcard-avatar">' + avatar + '</div>' +
+            '<div class="kcard-id">' +
+              '<div class="kcard-name">' + escHtml(cand.name || 'Unknown') + (isOnline ? '<span class="kcard-presence" title="Online now"></span>' : '') + '</div>' +
+              '<div class="kcard-job" title="' + escHtml(jobTitle) + '">' + escHtml(jobTitle) + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="kcard-actions">' +
+            '<button class="kicon-btn kicon-btn--solid kcard-act" data-act="stage" title="Move stage">' + ICON_ARROW + ' Stage</button>' +
+            '<button class="kicon-btn kcard-act" data-act="chat" title="Message">' + ICON_CHAT + ' Message</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      var accent = STAGE_ACCENTS[stage] || 'var(--dash-info)';
+      var more = apps.length > 6 ? '<div class="kanban-more">+' + (apps.length - 6) + ' more</div>' : '';
+      return '<div class="kanban-col">' +
+        '<div class="kanban-col-head">' +
+          '<span class="kanban-dot" style="background:' + accent + ';"></span>' +
+          '<span class="kanban-col-title">' + (STATUS_LABELS[stage] || stage) + '</span>' +
+          '<span class="kanban-col-count">' + apps.length + '</span>' +
+        '</div>' +
+        '<div class="kanban-rule" style="--kanban-accent:' + accent + ';"></div>' +
+        '<div class="kanban-cards">' + cards + more + '</div>' +
+      '</div>';
+    }).join('');
+
+    // card click → profile modal; action buttons stop propagation
+    board.querySelectorAll('.kcard').forEach(function (card) {
+      card.addEventListener('click', function () {
+        var app = __pipelineApps.find(function (a) { return a._id === card.getAttribute('data-app-id'); });
+        if (app) openCandidateProfile(app);
+      });
+    });
+
+    board.querySelectorAll('.kcard-act').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var appId = btn.closest('.kcard').getAttribute('data-app-id');
+        var app = __pipelineApps.find(function (a) { return a._id === appId; });
+        if (!app) return;
+        if (btn.getAttribute('data-act') === 'stage') openStageModal(app);
+        else openChat(app);
+      });
+    });
+  }
+
+  // ---- Candidate profile modal ----
+  var __profileModalCand = null;
+
+  function initialsOf(name) {
+    return (name || '?').split(' ').map(function (w) { return w.charAt(0); }).join('').toUpperCase().slice(0, 2);
+  }
+
+  function openCandidateProfile(app) {
+    var cand = app.candidateId || {};
+    if (!cand._id) return;
+    var modal = document.getElementById('candProfileModal');
+    if (!modal) return;
+    modal.style.display = 'block';
+    __profileModalCand = cand;
+
+    // skeleton while loading
+    document.getElementById('cpName').textContent = cand.name || 'Loading…';
+    document.getElementById('cpHistory').innerHTML = '<div style="font-size:0.84rem; color:var(--dash-text-muted,#5A6B87);">Loading history…</div>';
+
+    api.get('/applications/candidate/' + cand._id + '/profile')
+      .then(function (data) {
+        var c = data.candidate;
+        __profileModalCand = c;
+        var avatar = document.getElementById('cpAvatar');
+        if (c.profilePhoto) {
+          avatar.innerHTML = '<img src="' + c.profilePhoto + '" style="width:100%; height:100%; object-fit:cover;" alt="" />';
+        } else {
+          avatar.textContent = initialsOf(c.name);
+        }
+        var nameEl = document.getElementById('cpName');
+        nameEl.innerHTML = escHtml(c.name) +
+          ((c.isOnline || __onlineUsers[String(c._id)]) ? ' <span title="Online now" style="display:inline-block; width:9px; height:9px; border-radius:50%; background:#10B981;"></span>' : '');
+        var email = c.email || '—';
+        var phone = c.phone || '—';
+        document.getElementById('cpContact').innerHTML = escHtml(email) + ' &nbsp;·&nbsp; ' + escHtml(phone) +
+          ' &nbsp;·&nbsp; Profile <strong>' + (c.profileCompletion || 0) + '%</strong>';
+        document.getElementById('cpOnlineBadge').style.display = (c.isOnline || __onlineUsers[String(c._id)]) ? 'inline-flex' : 'none';
+
+        // stats chips
+        var s = data.stats;
+        document.getElementById('cpStats').innerHTML =
+          '<span class="cp-chip cp-chip--total">' + s.total + ' applications</span>' +
+          '<span class="cp-chip cp-chip--selected">' + s.selected + ' selected</span>' +
+          '<span class="cp-chip cp-chip--active">' + s.active + ' in progress</span>';
+
+        // details grid — editorial label-over-value pairs
+        var skills = (c.skills || []).join(', ') || '—';
+        document.getElementById('cpDetails').innerHTML =
+          '<div><div class="cp-label">Skills</div><div class="cp-value">' + escHtml(skills) + '</div></div>' +
+          '<div><div class="cp-label">Experience</div><div class="cp-value">' + escHtml(c.experience || '—') + '</div></div>' +
+          '<div><div class="cp-label">Education</div><div class="cp-value">' + escHtml(c.education || '—') + '</div></div>' +
+          '<div><div class="cp-label">Portfolio</div><div class="cp-value">' + (c.portfolioUrl ? '<a href="' + c.portfolioUrl + '" target="_blank" style="color:#2563EB; word-break:break-all;">' + escHtml(c.portfolioUrl) + '</a>' : '<span style="color:var(--text-muted,#64748B);">—</span>') + '</div></div>';
+
+        // resume
+        var resumeBtn = document.getElementById('cpResumeBtn');
+        if (c.resume) {
+          resumeBtn.href = c.resume;
+          resumeBtn.style.display = 'inline-block';
+        } else {
+          resumeBtn.style.display = 'none';
+        }
+
+        // history
+        document.getElementById('cpHistCount').textContent = '(' + data.applications.length + ')';
+        document.getElementById('cpHistory').innerHTML = data.applications.length
+          ? data.applications.map(function (a) {
+              var col = STAGE_COLORS[a.status] || '#64748B';
+              var when = a.appliedDate ? new Date(a.appliedDate).toLocaleDateString() : '';
+              var interview = a.status === 'interviewScheduled' && a.interviewDate ? ' · 📅 ' + new Date(a.interviewDate).toLocaleString() : '';
+              return '<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-bottom:1px dashed var(--dash-card-border,#EDF2F7); font-size:0.84rem;">' +
+                '<div><strong>' + escHtml(a.job ? a.job.title : 'Job') + '</strong>' +
+                  '<div style="font-size:0.72rem; color:var(--dash-text-muted,#5A6B87);">' + escHtml(a.job && a.job.company ? a.job.company.name : '') + ' · applied ' + when + interview + '</div></div>' +
+                '<span style="font-size:0.68rem; font-weight:800; color:#fff; background:' + col + '; padding:3px 10px; border-radius:99px; white-space:nowrap;">' + (STATUS_LABELS[a.status] || a.status) + '</span>' +
+              '</div>';
+            }).join('')
+          : '<div style="font-size:0.84rem; color:var(--dash-text-muted,#5A6B87);">No applications found.</div>';
+      })
+      .catch(function (err) {
+        document.getElementById('cpHistory').innerHTML = '<div style="font-size:0.84rem; color:#EF4444;">' + escHtml(err.message || 'Failed to load profile') + '</div>';
+      });
+  }
+
+  function initCandidateProfileModal() {
+    var modal = document.getElementById('candProfileModal');
+    if (!modal) return;
+    document.getElementById('cpClose').addEventListener('click', function () {
+      modal.style.display = 'none';
+      __profileModalCand = null;
+    });
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) { modal.style.display = 'none'; __profileModalCand = null; }
+    });
+    document.getElementById('cpMessageBtn').addEventListener('click', function () {
+      var c = __profileModalCand;
+      if (!c) return;
+      // find an application to anchor the conversation (candidateId_jobId)
+      api.get('/applications/candidate/' + c._id)
+        .then(function (apps) {
+          var list = Array.isArray(apps) ? apps : apps.applications || [];
+          if (!list.length) { showToast('This candidate has no applications yet', 'error'); return; }
+          var firstJobId = list[0].jobId;
+          var jobId = typeof firstJobId === 'object' ? firstJobId._id : firstJobId;
+          modal.style.display = 'none';
+          openChat({ candidateId: c, jobId: { _id: jobId, title: '' }, candidateNameOverride: true });
+        })
+        .catch(function () { showToast('Could not open chat', 'error'); });
+    });
+  }
+
+  // ---- Stage modal ----
+  var __stageApp = null;
+  function openStageModal(app) {
+    __stageApp = app;
+    var modal = document.getElementById('stageModal');
+    if (!modal) return;
+    var cand = app.candidateId || {};
+    var job = app.jobId || {};
+    document.getElementById('stageContext').textContent =
+      (cand.name || 'Candidate') + ' — ' + (typeof job === 'object' ? job.title : '') + ' · current: ' + (STATUS_LABELS[app.status] || app.status);
+    var sel = document.getElementById('stageSelect');
+    sel.value = app.status;
+    document.getElementById('stageInterviewFields').style.display = app.status === 'interviewScheduled' ? 'block' : 'none';
+    if (app.interviewDate) {
+      var d = new Date(app.interviewDate);
+      var pad = function (n) { return String(n).padStart(2, '0'); };
+      document.getElementById('stageInterviewDate').value = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+    document.getElementById('stageInterviewLink').value = app.interviewLink || '';
+    document.getElementById('stageNote').value = '';
+    modal.style.display = 'block';
+  }
+
+  function initStageModal() {
+    var modal = document.getElementById('stageModal');
+    if (!modal) return;
+    var close = function () { modal.style.display = 'none'; };
+    document.getElementById('stageClose').addEventListener('click', close);
+    document.getElementById('stageCancel').addEventListener('click', close);
+    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+
+    document.getElementById('stageSelect').addEventListener('change', function () {
+      document.getElementById('stageInterviewFields').style.display = this.value === 'interviewScheduled' ? 'block' : 'none';
+    });
+
+    document.getElementById('stageSave').addEventListener('click', function () {
+      if (!__stageApp) return;
+      var status = document.getElementById('stageSelect').value;
+      var note = document.getElementById('stageNote').value.trim();
+      var payload = { status: status, note: note };
+      if (status === 'interviewScheduled') {
+        var idate = document.getElementById('stageInterviewDate').value;
+        var ilink = document.getElementById('stageInterviewLink').value.trim();
+        if (!idate) { showToast('Pick an interview date first', 'error'); return; }
+        payload.interviewDate = new Date(idate).toISOString();
+        payload.interviewLink = ilink;
+      }
+      var btn = this;
+      btn.disabled = true; btn.textContent = 'Updating…';
+      api.put('/applications/' + __stageApp._id + '/status', payload)
+        .then(function () {
+          showToast('Stage updated → ' + (STATUS_LABELS[status] || status), 'success');
+          close();
+          initRecruiterPipeline();
+          fetchAndRenderApplicants(true);
+        })
+        .catch(function (err) { showToast(err.message || 'Update failed', 'error'); })
+        .finally(function () { btn.disabled = false; btn.textContent = 'Update Stage'; });
+    });
+  }
+
+  // ---- Chat panel ----
+  function openChat(app) {
+    var cand = app.candidateId || {};
+    var job = app.jobId || {};
+    var jobId = typeof job === 'object' ? job._id : job;
+    __chatConv = {
+      conversationId: cand._id + '_' + jobId,
+      candidateName: app.candidateNameOverride ? cand.name : (cand.name || 'Candidate'),
+      peerId: cand._id
+    };
+    var panel = document.getElementById('chatPanel');
+    var jobTitle = typeof job === 'object' ? (job.title || '') : '';
+    document.getElementById('chatTitle').textContent = __chatConv.candidateName + (jobTitle ? ' — ' + jobTitle : '');
+    panel.style.display = 'flex';
+    document.getElementById('chatMessages').innerHTML = '';
+    loadChatHistory();
+    api.put('/messages/' + __chatConv.conversationId + '/read', {}).catch(function () {});
+  }
+
+  // ---- Saved-leads (saved but not applied) ----
+  function initSavedLeads() {
+    var body = document.getElementById('savedLeadsBody');
+    if (!body) return;
+    api.get('/applications/saved-leads')
+      .then(function (data) {
+        var leads = data.leads || [];
+        var badge = document.getElementById('savedLeadsBadge');
+        if (badge) badge.textContent = leads.length + (leads.length === 1 ? ' lead' : ' leads');
+        if (!leads.length) {
+          body.innerHTML = '<div style="font-size:0.84rem; color:var(--dash-text-muted,#5A6B87);">No saved-but-not-applied leads yet. When candidates save jobs from listings, they appear here for a nudge.</div>';
+          return;
+        }
+        var ICON_SEND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+        body.innerHTML = leads.map(function (l) {
+          var jobs = l.savedNotApplied.map(function (j) {
+            return '<span class="lead-chip">' + escHtml(j.title) +
+              '<button class="lead-nudge-btn lead-nudge" data-cand="' + l.candidate._id + '" data-job="' + j._id + '" data-name="' + escHtml(l.candidate.name) + '" data-title="' + escHtml(j.title) + '">' + ICON_SEND + ' Nudge</button></span>';
+          }).join('');
+          return '<div style="display:flex; justify-content:space-between; align-items:center; gap:14px; padding:12px 0; border-bottom:1px dashed var(--dash-card-border,#EDF2F7);">' +
+            '<div>' +
+              '<div style="font-size:0.86rem; font-weight:700;">' + escHtml(l.candidate.name) + ' <span style="font-weight:500; color:var(--text-muted,#64748B); font-size:0.74rem;">· profile ' + (l.candidate.profileCompletion || 0) + '%</span></div>' +
+              '<div style="margin-top:5px;">' + jobs + '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+
+        body.querySelectorAll('.lead-nudge').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var candId = btn.getAttribute('data-cand');
+            var jobId = btn.getAttribute('data-job');
+            var name = btn.getAttribute('data-name');
+            var title = btn.getAttribute('data-title');
+            openChat({ candidateId: { _id: candId, name: name }, jobId: { _id: jobId, title: title }, candidateNameOverride: true });
+          });
+        });
+      })
+      .catch(function () {
+        body.innerHTML = '<div style="font-size:0.84rem; color:var(--dash-text-muted,#5A6B87);">Could not load saved leads.</div>';
+      });
+  }
+
+  function loadChatHistory() {
+    if (!__chatConv) return;
+    api.get('/messages/' + __chatConv.conversationId)
+      .then(function (d) {
+        var me = api.getUser();
+        var box = document.getElementById('chatMessages');
+        box.innerHTML = (d.messages || []).map(function (m) {
+          var mine = String(m.senderId) === String(me._id);
+          return chatBubble(m, mine);
+        }).join('');
+        box.scrollTop = box.scrollHeight;
+      })
+      .catch(function () {});
+  }
+
+  function chatBubble(m, mine) {
+    var time = new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return '<div style="align-self:' + (mine ? 'flex-end' : 'flex-start') + '; max-width:78%;">' +
+      '<div style="padding:8px 12px; border-radius:14px; font-size:0.84rem; line-height:1.35; ' +
+        (mine ? 'background:#2563EB; color:#fff; border-bottom-right-radius:4px;' : 'background:var(--dash-card-bg,#fff); border:1px solid var(--dash-card-border,#E2E8F0); border-bottom-left-radius:4px;') + '">' +
+        escHtml(m.text) +
+      '</div>' +
+      '<div style="font-size:0.62rem; color:var(--dash-text-muted,#5A6B87); margin-top:2px; text-align:' + (mine ? 'right' : 'left') + ';">' + time + (m.read && mine ? ' ✓✓' : '') + '</div>' +
+    '</div>';
+  }
+
+  function initChatPanel() {
+    var panel = document.getElementById('chatPanel');
+    if (!panel) return;
+    document.getElementById('chatClose').addEventListener('click', function () {
+      panel.style.display = 'none'; __chatConv = null;
+      if (window.__typingTimer) { clearTimeout(window.__typingTimer); window.__typingTimer = null; }
+    });
+
+    var send = function () {
+      var input = document.getElementById('chatInput');
+      var text = input.value.trim();
+      if (!text || !__chatConv) return;
+      api.post('/messages', { conversationId: __chatConv.conversationId, text: text })
+        .then(function (msg) {
+          input.value = '';
+          var me = api.getUser();
+          var box = document.getElementById('chatMessages');
+          box.insertAdjacentHTML('beforeend', chatBubble(msg.toObject ? msg.toObject() : msg, true));
+          box.scrollTop = box.scrollHeight;
+        })
+        .catch(function (err) { showToast(err.message || 'Could not send', 'error'); });
+    };
+    document.getElementById('chatSend').addEventListener('click', send);
+    document.getElementById('chatInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') send();
+    });
+
+    // typing indicator → peer
+    var typingTimer = null;
+    document.getElementById('chatInput').addEventListener('input', function () {
+      if (!__chatConv) return;
+      JobKartSocket.emit('typing:start', { conversationId: __chatConv.conversationId, to: __chatConv.peerId });
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(function () {
+        JobKartSocket.emit('typing:stop', { conversationId: __chatConv.conversationId, to: __chatConv.peerId });
+      }, 1200);
+    });
+
+    // incoming messages + typing
+    if (window.JobKartSocket) {
+      JobKartSocket.on('message:new', function (data) {
+        if (!__chatConv || data.message.conversationId !== __chatConv.conversationId) return;
+        var box = document.getElementById('chatMessages');
+        box.insertAdjacentHTML('beforeend', chatBubble(data.message, false));
+        box.scrollTop = box.scrollHeight;
+        api.put('/messages/' + __chatConv.conversationId + '/read', {}).catch(function () {});
+      });
+      JobKartSocket.on('typing:start', function (d) {
+        if (!__chatConv || d.conversationId !== __chatConv.conversationId) return;
+        var el = document.getElementById('chatTyping');
+        el.textContent = __chatConv.candidateName + ' is typing…';
+        el.style.display = 'block';
+      });
+      JobKartSocket.on('typing:stop', function (d) {
+        if (!__chatConv || d.conversationId !== __chatConv.conversationId) return;
+        document.getElementById('chatTyping').style.display = 'none';
+      });
+    }
+  }
+
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // ===== REAL-TIME (recruiter) =====
+  function initRecruiterRealtime() {
+    if (!window.JobKartSocket) return;
+    JobKartSocket.on('application:new', function (data) {
+      showToast('🎯 New application from ' + (data.candidate && data.candidate.name ? data.candidate.name : 'a candidate') + ' for ' + (data.job && data.job.title ? data.job.title : 'a job') + '!', 'success');
+      if (typeof initRecruiterDashboard === 'function') initRecruiterDashboard();
+      if (typeof fetchAndRenderApplicants === 'function') fetchAndRenderApplicants(true);
+      if (typeof initRecruiterPipeline === 'function') initRecruiterPipeline();
+    });
+    JobKartSocket.on('message:new', function (data) {
+      showToast('💬 New message from ' + (data.sender && data.sender.name ? data.sender.name : 'a candidate'), 'info');
+    });
+    JobKartSocket.on('user:online', function (data) {
+      // live presence: update the map + refresh any visible green dots
+      __onlineUsers[String(data.userId)] = !!data.isOnline;
+      document.querySelectorAll('.kcard[data-cand-id="' + data.userId + '"]').forEach(function (card) {
+        var nameEl = card.querySelector('div');
+        if (!nameEl) return;
+        var existing = nameEl.querySelector('span[title="Online now"]');
+        if (data.isOnline && !existing) {
+          var dot = document.createElement('span');
+          dot.title = 'Online now';
+          dot.style.cssText = 'display:inline-block; width:8px; height:8px; border-radius:50%; background:#10B981; margin-left:5px; box-shadow:0 0 0 2px rgba(16,185,129,0.2);';
+          nameEl.appendChild(dot);
+        } else if (!data.isOnline && existing) {
+          existing.remove();
+        }
+      });
+      // also update profile modal if open for this candidate
+      if (__profileModalCand && String(__profileModalCand._id) === String(data.userId)) {
+        __profileModalCand.isOnline = data.isOnline;
+        var el = document.getElementById('cpOnlineBadge');
+        if (el) el.style.display = data.isOnline ? 'inline-flex' : 'none';
+      }
+    });
   }
 
   // Wait for DOM

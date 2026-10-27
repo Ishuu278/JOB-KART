@@ -31,6 +31,7 @@
           <button class="role-toggle-btn active" data-role="recruiter">Recruiter</button>
         </div>
       </li>
+      <li id="notifBellMount" style="display:flex; align-items:center;"></li>
       <li>
         <button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode">
           <span class="dark-mode-icon-moon">
@@ -167,10 +168,11 @@
               <select class="dash-filter-select" id="applicantFilter">
                 <option value="all">All Status</option>
                 <option value="applied">Applied</option>
-                <option value="review">Under Review</option>
+                <option value="underReview">Under Review</option>
                 <option value="shortlisted">Shortlisted</option>
-                <option value="interview">Interview</option>
+                <option value="interviewScheduled">Interview</option>
                 <option value="selected">Selected</option>
+                <option value="rejected">Rejected</option>
               </select>
             </div>
             <div class="dash-card-body dash-card-body--flush" id="applicantList">
@@ -178,6 +180,21 @@
             </div>
             <!-- Pagination Container -->
             <div class="dash-pagination" id="applicantPagination"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PIPELINE BOARD (Kanban) ===== -->
+      <section>
+        <div class="dash-grid--full">
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h2 class="dash-card-title">Hiring Pipeline</h2>
+              <span class="dash-card-badge" id="pipelineTotalBadge">0</span>
+            </div>
+            <div class="dash-card-body dash-card-body--flush">
+              <div id="kanbanBoard" style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; padding:16px; overflow-x:auto;"></div>
+            </div>
           </div>
         </div>
       </section>
@@ -336,9 +353,98 @@
     </div>
   </div>
 
+  <!-- ===== STAGE UPDATE MODAL ===== -->
+  <div id="stageModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(10,20,40,0.55); backdrop-filter:blur(3px);">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:min(480px, calc(100vw - 32px)); background:var(--dash-card-bg,#fff); border-radius:18px; padding:26px 28px; box-shadow:0 24px 64px rgba(10,20,40,0.25); color:var(--dash-text,#0F1D33);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <h2 style="margin:0; font-size:1.2rem;">Update Stage</h2>
+        <button id="stageClose" style="border:none; background:transparent; font-size:1.4rem; cursor:pointer; color:var(--dash-text-muted,#5A6B87); line-height:1;">×</button>
+      </div>
+      <p id="stageContext" style="margin:0 0 16px; font-size:0.86rem; color:var(--dash-text-muted,#5A6B87);"></p>
+      <label style="display:block; font-size:0.78rem; font-weight:600; margin-bottom:5px;">New Stage</label>
+      <select id="stageSelect" style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--dash-bg,#F6F8FC); color:inherit; margin-bottom:12px;">
+        <option value="applied">Applied</option>
+        <option value="underReview">Under Review</option>
+        <option value="shortlisted">Shortlisted</option>
+        <option value="interviewScheduled">Interview Scheduled</option>
+        <option value="selected">Selected</option>
+        <option value="rejected">Rejected</option>
+      </select>
+      <div id="stageInterviewFields" style="display:none; margin-bottom:12px;">
+        <label style="display:block; font-size:0.78rem; font-weight:600; margin-bottom:5px;">Interview Date & Time</label>
+        <input type="datetime-local" id="stageInterviewDate" style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--dash-bg,#F6F8FC); color:inherit; margin-bottom:10px;" />
+        <label style="display:block; font-size:0.78rem; font-weight:600; margin-bottom:5px;">Interview Link (Google Meet / Zoom)</label>
+        <input type="url" id="stageInterviewLink" placeholder="https://meet.google.com/..." style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--dash-bg,#F6F8FC); color:inherit;" />
+      </div>
+      <label style="display:block; font-size:0.78rem; font-weight:600; margin-bottom:5px;">Note (optional)</label>
+      <textarea id="stageNote" rows="2" placeholder="e.g. We were impressed by your portfolio..." style="width:100%; padding:9px 12px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.9rem; background:var(--dash-bg,#F6F8FC); color:inherit; resize:vertical; margin-bottom:16px;"></textarea>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button id="stageCancel" style="padding:10px 20px; border:1px solid rgba(15,29,51,0.15); background:transparent; border-radius:10px; cursor:pointer; font-size:0.88rem; color:var(--dash-text-muted,#5A6B87);">Cancel</button>
+        <button id="stageSave" style="padding:10px 24px; border:none; background:#2563EB; color:#fff; border-radius:10px; cursor:pointer; font-size:0.88rem; font-weight:600;">Update Stage</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CANDIDATE PROFILE MODAL ===== -->
+  <div id="candProfileModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(10,20,40,0.55); backdrop-filter:blur(3px);">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:min(720px, calc(100vw - 32px)); max-height:90vh; overflow-y:auto; background:var(--dash-card-bg,#fff); border-radius:18px; padding:26px 28px; box-shadow:0 24px 64px rgba(10,20,40,0.25); color:var(--dash-text,#0F1D33);">
+      <button id="cpClose" style="position:absolute; top:14px; right:18px; border:none; background:transparent; font-size:1.4rem; cursor:pointer; color:var(--dash-text-muted,#5A6B87); line-height:1;">×</button>
+      <div id="cpBody" style="text-align:center; padding:6px 0 4px;">
+        <div style="display:flex; align-items:center; justify-content:center; gap:16px; text-align:left;">
+          <div id="cpAvatar" style="width:76px; height:76px; border-radius:50%; background:linear-gradient(135deg,#2563EB,#1E40AF); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.6rem; font-weight:700; overflow:hidden; flex-shrink:0;"></div>
+          <div>
+            <h2 id="cpName" style="margin:0 0 4px; font-size:1.3rem; display:flex; align-items:center; gap:8px;"></h2>
+            <div id="cpContact" style="font-size:0.82rem; color:var(--dash-text-muted,#5A6B87);"></div>
+            <span id="cpOnlineBadge" style="display:none; margin-top:6px; font-size:0.68rem; font-weight:800; color:#10B981; background:rgba(16,185,129,0.12); padding:2px 10px; border-radius:99px;">● ONLINE NOW</span>
+          </div>
+        </div>
+      </div>
+      <div id="cpStats" style="display:flex; gap:10px; justify-content:center; margin:16px 0;"></div>
+      <div id="cpDetails" style="display:grid; grid-template-columns:1fr 1fr; gap:10px 18px; font-size:0.84rem; margin-bottom:16px;"></div>
+      <div style="display:flex; gap:10px; justify-content:center; margin-bottom:18px;">
+        <a id="cpResumeBtn" href="#" target="_blank" style="display:none; padding:10px 20px; border:1px solid rgba(15,29,51,0.15); border-radius:10px; font-size:0.85rem; font-weight:700; color:#2563EB; text-decoration:none;">Download Resume ↓</a>
+        <button id="cpMessageBtn" style="padding:10px 20px; border:none; background:#2563EB; color:#fff; border-radius:10px; font-size:0.85rem; font-weight:700; cursor:pointer;">Message Candidate</button>
+      </div>
+      <h3 style="margin:0 0 10px; font-size:0.95rem;">Application History <span id="cpHistCount" style="color:var(--dash-text-muted,#5A6B87); font-weight:500;"></span></h3>
+      <div id="cpHistory"></div>
+    </div>
+  </div>
+
+  <!-- ===== SAVED LEADS SECTION ===== -->
+  <section style="margin-top:24px;">
+    <div class="dash-grid--full">
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <h2 class="dash-card-title">Saved Jobs — Not Yet Applied</h2>
+          <span class="dash-card-badge" id="savedLeadsBadge">0 leads</span>
+        </div>
+        <div class="dash-card-body dash-card-body--flush" id="savedLeadsBody" style="padding:14px 16px;">
+          <div style="font-size:0.84rem; color:var(--dash-text-muted,#5A6B87);">Loading…</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CHAT PANEL ===== -->
+  <div id="chatPanel" style="display:none; position:fixed; right:24px; bottom:24px; width:380px; max-width:calc(100vw - 32px); height:520px; max-height:calc(100vh - 48px); background:var(--dash-card-bg,#fff); border:1px solid var(--dash-card-border,#E2E8F0); border-radius:16px; box-shadow:0 24px 64px rgba(10,20,40,0.25); z-index:9998; flex-direction:column; overflow:hidden; color:var(--dash-text,#0F1D33);">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:#2563EB; color:#fff;">
+      <strong id="chatTitle" style="font-size:0.92rem;">Chat</strong>
+      <button id="chatClose" style="border:none; background:transparent; color:#fff; font-size:1.3rem; cursor:pointer; line-height:1;">×</button>
+    </div>
+    <div id="chatMessages" style="flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:8px; background:var(--dash-bg,#F6F8FC);"></div>
+    <div id="chatTyping" style="display:none; padding:2px 16px 6px; font-size:0.72rem; color:var(--dash-text-muted,#5A6B87); font-style:italic;"></div>
+    <div style="display:flex; gap:8px; padding:12px; border-top:1px solid var(--dash-card-border,#EDF2F7);">
+      <input id="chatInput" placeholder="Type a message..." maxlength="2000" style="flex:1; padding:10px 14px; border:1px solid rgba(15,29,51,0.15); border-radius:99px; font-size:0.88rem; background:var(--dash-bg,#F6F8FC); color:inherit; outline:none;" />
+      <button id="chatSend" style="padding:10px 18px; border:none; background:#2563EB; color:#fff; border-radius:99px; cursor:pointer; font-weight:700; font-size:0.85rem;">Send</button>
+    </div>
+  </div>
+
   <script src="js/api.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/socket.js"></script>
   <script src="js/main.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="js/notifications-ui.js"></script>
   <script src="js/dashboard.js"></script>
 </body>
 </html>

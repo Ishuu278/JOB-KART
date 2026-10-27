@@ -29,8 +29,26 @@ exports.getJobs = async (req, res) => {
       dbQuery = dbQuery.sort({ postedDate: -1 });
     }
 
-    const jobs = await dbQuery;
-    res.json(jobs);
+    // Server-side pagination (?page=1&limit=10). limit=0 / 'all' → return everything (legacy).
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limitParam = req.query.limit;
+    const wantsAll = limitParam === undefined || limitParam === 'all' || limitParam === '0';
+
+    if (wantsAll) {
+      const jobs = await dbQuery;
+      return res.json(jobs);
+    }
+
+    const limit = Math.min(50, Math.max(1, parseInt(limitParam, 10) || 10));
+    const total = await Job.countDocuments(query);
+    const jobs = await dbQuery.skip((page - 1) * limit).limit(limit);
+    res.json({
+      jobs,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      hasMore: page * limit < total
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

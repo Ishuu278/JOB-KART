@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Job-Kart ATS Scanner — see how your resume scores, which jobs fit you best, and what to improve." />
+  <title>ATS Resume Scanner | Job-Kart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <style>
+    .ats-wrap { max-width: 1060px; margin: 0 auto; padding: 32px 20px 80px; }
+    .ats-hero { margin-bottom: 26px; }
+    .ats-hero h1 { margin: 0 0 6px; font-size: 1.9rem; color: var(--dash-text, #0F1D33); }
+    .ats-hero p { margin: 0; color: var(--dash-text-muted, #5A6B87); font-size: 0.95rem; }
+    .ats-grid { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+    @media (max-width: 900px) { .ats-grid { grid-template-columns: 1fr; } }
+    .ats-card { background: var(--dash-card-bg, #fff); border: 1px solid var(--dash-card-border, #E2E8F0); border-radius: 16px; padding: 22px; color: var(--dash-text, #0F1D33); }
+    .ats-score-ring { position: relative; width: 148px; height: 148px; margin: 6px auto 10px; }
+    .ats-score-ring svg { transform: rotate(-90deg); }
+    .ats-score-ring circle { fill: none; stroke-width: 12; stroke-linecap: round; }
+    .ats-score-bg { stroke: var(--dash-card-border, #E2E8F0); }
+    .ats-score-fill { stroke: #2563EB; transition: stroke-dashoffset 1s ease; }
+    .ats-score-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .ats-score-text strong { font-size: 2.1rem; line-height: 1; }
+    .ats-score-text span { font-size: 0.72rem; color: var(--dash-text-muted, #5A6B87); margin-top: 4px; letter-spacing: 0.6px; }
+    .ats-verdict { text-align: center; font-weight: 600; font-size: 0.9rem; margin-bottom: 16px; }
+    .ats-section-row { margin-bottom: 14px; }
+    .ats-section-row .lbl { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; margin-bottom: 5px; }
+    .ats-bar { height: 8px; border-radius: 99px; background: var(--dash-card-border, #E2E8F0); overflow: hidden; }
+    .ats-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg,#2563EB,#60A5FA); transition: width .8s ease; }
+    .ats-check { display: flex; gap: 8px; align-items: flex-start; padding: 7px 0; border-bottom: 1px dashed var(--dash-card-border, #EDF2F7); font-size: 0.82rem; }
+    .ats-check:last-child { border-bottom: none; }
+    .ats-check .ok { color: #10B981; font-weight: 700; }
+    .ats-check .bad { color: #EF4444; font-weight: 700; }
+    .ats-card h3 { margin: 0 0 12px; font-size: 1.02rem; }
+    .ats-sugg { display: flex; gap: 10px; padding: 12px 14px; border-radius: 12px; margin-bottom: 10px; font-size: 0.86rem; align-items: flex-start; }
+    .ats-sugg--high { background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.3); }
+    .ats-sugg--medium { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.35); }
+    .ats-sugg--low { background: rgba(37,99,235,0.06); border: 1px solid rgba(37,99,235,0.25); }
+    .ats-sugg .pri { flex-shrink: 0; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.8px; padding: 3px 8px; border-radius: 99px; text-transform: uppercase; }
+    .ats-sugg--high .pri { background: #EF4444; color: #fff; }
+    .ats-sugg--medium .pri { background: #F59E0B; color: #fff; }
+    .ats-sugg--low .pri { background: #2563EB; color: #fff; }
+    .job-match { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--dash-card-border, #EDF2F7); }
+    .job-match:last-child { border-bottom: none; }
+    .job-match .meta h4 { margin: 0 0 3px; font-size: 0.95rem; }
+    .job-match .meta p { margin: 0; font-size: 0.78rem; color: var(--dash-text-muted, #5A6B87); }
+    .job-match .chips { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 5px; }
+    .chip { font-size: 0.68rem; font-weight: 700; padding: 2px 9px; border-radius: 99px; }
+    .chip--have { background: rgba(16,185,129,0.12); color: #059669; }
+    .chip--miss { background: rgba(239,68,68,0.1); color: #DC2626; }
+    .fit-ring { position: relative; width: 58px; height: 58px; flex-shrink: 0; }
+    .fit-ring svg { transform: rotate(-90deg); }
+    .fit-ring circle { fill: none; stroke-width: 6; stroke-linecap: round; }
+    .fit-ring .fit-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800; }
+    .ats-empty { text-align: center; padding: 60px 20px; }
+    .ats-empty .big { font-size: 2.6rem; margin-bottom: 10px; }
+    .ats-btn { display: inline-block; margin-top: 14px; padding: 11px 26px; border: none; background: #2563EB; color: #fff; border-radius: 10px; font-weight: 700; font-size: 0.9rem; cursor: pointer; text-decoration: none; }
+    .ats-skills-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .ats-skills-list .chip { background: rgba(37,99,235,0.1); color: #2563EB; }
+    .ats-loading { text-align: center; padding: 80px 0; color: var(--dash-text-muted, #5A6B87); }
+  </style>
+</head>
+<body data-dashboard="candidate">
+
+  <nav class="navbar" id="navbar">
+    <a href="index.html" class="nav-logo">JOB<span class="logo-dot"></span>KART</a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">HOME</a></li>
+      <li><a href="openings.html">OPEN POSITIONS</a></li>
+      <li><a href="about.html">ABOUT US</a></li>
+      <li><a href="contact.html">CONTACT US</a></li>
+      <li><a href="candidate-dashboard.html">DASHBOARD</a></li>
+      <li><button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode">🌙</button></li>
+    </ul>
+  </nav>
+
+  <main class="dashboard-page">
+    <div class="ats-wrap">
+      <div class="ats-hero">
+        <h1>ATS Resume Scanner</h1>
+        <p>See how your resume scores against applicant tracking systems, which live jobs fit you best, and exactly what to improve.</p>
+      </div>
+
+      <div id="atsLoading" class="ats-loading">Analyzing your resume…</div>
+
+      <div id="atsNoResume" class="ats-card ats-empty" style="display:none;">
+        <div class="big">📄</div>
+        <h3 style="margin:0 0 6px;">No resume uploaded yet</h3>
+        <p style="margin:0; color:var(--dash-text-muted,#5A6B87); font-size:0.9rem;">Upload your PDF resume from your dashboard — the scanner reads its text, scores it, and matches you to live jobs.</p>
+        <a class="ats-btn" href="candidate-dashboard.html">Go to Dashboard & upload</a>
+      </div>
+
+      <div id="atsScannedPdf" class="ats-card ats-empty" style="display:none;">
+        <div class="big">🖼️</div>
+        <h3 style="margin:0 0 6px;">Your resume has no readable text</h3>
+        <p style="margin:0; color:var(--dash-text-muted,#5A6B87); font-size:0.9rem;">It looks like a scanned image. Re-upload a text-based PDF so the scanner (and recruiters' ATS) can read it.</p>
+        <a class="ats-btn" href="candidate-dashboard.html">Re-upload from Dashboard</a>
+      </div>
+
+      <div id="atsReport" style="display:none;">
+        <div class="ats-grid">
+          <!-- LEFT: score -->
+          <div>
+            <div class="ats-card" style="margin-bottom:20px;">
+              <h3 style="text-align:center;">Resume Score</h3>
+              <div class="ats-score-ring">
+                <svg width="148" height="148">
+                  <circle class="ats-score-bg" cx="74" cy="74" r="62"></circle>
+                  <circle class="ats-score-fill" id="scoreArc" cx="74" cy="74" r="62" stroke-dasharray="389.6" stroke-dashoffset="389.6"></circle>
+                </svg>
+                <div class="ats-score-text"><strong id="scoreNum">0</strong><span>OUT OF 100</span></div>
+              </div>
+              <div class="ats-verdict" id="scoreVerdict"></div>
+              <div id="sectionBars"></div>
+            </div>
+            <div class="ats-card">
+              <h3>Detected Skills (<span id="skillCount">0</span>)</h3>
+              <div class="ats-skills-list" id="skillsList"></div>
+            </div>
+          </div>
+
+          <!-- RIGHT: checks, suggestions, jobs -->
+          <div>
+            <div class="ats-card" style="margin-bottom:20px;">
+              <h3>How to improve — prioritized</h3>
+              <div id="suggestionsList"></div>
+            </div>
+
+            <div class="ats-card" style="margin-bottom:20px;">
+              <h3>Best-fit live jobs</h3>
+              <div id="jobMatches"></div>
+            </div>
+
+            <div class="ats-card">
+              <h3>ATS checklist</h3>
+              <div id="checksList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/ats.js"></script>
+</body>
+</html>

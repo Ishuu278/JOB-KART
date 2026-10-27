@@ -9,6 +9,7 @@
   --dash-gap: 24px;
   --dash-card-bg: var(--white);
   --dash-card-border: var(--border-soft);
+  --dash-bg: var(--bg-soft);
   --dash-card-shadow: var(--shadow-card);
   --dash-card-hover: var(--shadow);
   --dash-accent-glow: rgba(37, 99, 235, 0.12);
@@ -50,6 +51,7 @@
 
   --dash-card-bg: #1E293B;
   --dash-card-border: #334155;
+  --dash-bg: #26334A;
   --dash-page-bg: #0F172A;
   --dash-skeleton: #334155;
   --dash-skeleton-shine: #475569;
@@ -745,6 +747,269 @@
   background: rgba(6, 182, 212, 0.1);
   color: #06B6D4;
 }
+
+.status-badge--underReview {
+  background: var(--dash-warning-bg);
+  color: #B45309;
+}
+
+.status-badge--interviewScheduled {
+  background: rgba(139, 92, 246, 0.1);
+  color: #7C3AED;
+}
+
+
+/* ============================================================
+   REFINED COMPONENTS — Kanban / chips / icon actions
+   Restrained palette, layered elevation, real iconography.
+   ============================================================ */
+
+/* Kanban board shell */
+.kanban {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(200px, 1fr);
+  gap: 14px;
+  padding: 18px 18px 20px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.kanban::-webkit-scrollbar { height: 8px; }
+.kanban::-webkit-scrollbar-thumb { background: var(--dash-card-border); border-radius: 99px; }
+.kanban::-webkit-scrollbar-track { background: transparent; }
+
+.kanban-col { min-width: 0; }
+
+/* Column header: quiet label + hairline rule */
+.kanban-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px 10px;
+}
+
+.kanban-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.kanban-col-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted, #64748B);
+}
+
+.kanban-col-count {
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted, #64748B);
+  font-variant-numeric: tabular-nums;
+}
+
+.kanban-rule {
+  height: 1px;
+  background: var(--dash-card-border);
+  margin: 0 2px 12px;
+  position: relative;
+}
+
+.kanban-rule::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 2px;
+  width: 28px;
+  border-radius: 99px;
+  background: var(--kanban-accent, var(--dash-info));
+}
+
+.kanban-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 40px;
+}
+
+.kanban-more {
+  font-size: 0.68rem;
+  color: var(--text-muted, #64748B);
+  text-align: center;
+  padding-top: 2px;
+}
+
+/* Candidate card: white surface, hairline border, quiet shadow */
+.kcard {
+  background: var(--dash-card-bg, #fff);
+  border: 1px solid var(--dash-card-border, #E8EDF4);
+  border-radius: 12px;
+  padding: 12px 12px 10px;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  box-shadow: 0 1px 2px rgba(15, 29, 51, 0.04);
+}
+
+.kcard:hover {
+  transform: translateY(-1px);
+  border-color: #C9D6E8;
+  box-shadow: 0 6px 18px rgba(15, 29, 51, 0.08);
+}
+
+[data-theme="dark"] .kcard:hover { border-color: #475569; }
+
+.kcard-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* Tiny avatar — replaces nothing-existing, gives cards identity */
+.kcard-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #334E7E, #1E3A5F);
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+}
+
+.kcard-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.kcard-id { min-width: 0; flex: 1; }
+
+.kcard-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-dark, #0F1D33);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1.25;
+}
+
+/* Presence: hollow green ring when offline-ish, solid when online */
+.kcard-presence {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #10B981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18);
+}
+
+.kcard-job {
+  font-size: 0.68rem;
+  color: var(--text-muted, #64748B);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Card actions: quiet icon buttons — no color blobs */
+.kcard-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.kicon-btn {
+  flex: 1;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: 8px;
+  border: 1px solid var(--dash-card-border, #E8EDF4);
+  background: transparent;
+  color: var(--text-muted, #64748B);
+  font-size: 0.64rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.kicon-btn svg { width: 11px; height: 11px; }
+
+.kicon-btn:hover {
+  border-color: #2563EB;
+  color: #2563EB;
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.kicon-btn--solid:hover { background: #2563EB; color: #fff; }
+
+/* Lead chips (saved-not-applied) */
+.lead-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-dark, #0F1D33);
+  background: var(--dash-bg, #F6F8FC);
+  border: 1px solid var(--dash-card-border, #E8EDF4);
+  padding: 5px 6px 5px 12px;
+  border-radius: 99px;
+  margin: 3px 6px 3px 0;
+}
+
+.lead-nudge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: #2563EB;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 3px 9px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+
+.lead-nudge-btn:hover { background: rgba(37, 99, 235, 0.09); }
+.lead-nudge-btn svg { width: 10px; height: 10px; }
+
+/* Profile modal details — tighter, editorial labels */
+.cp-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted, #64748B);
+  margin-bottom: 3px;
+}
+
+.cp-value { font-size: 0.84rem; color: var(--text-dark, #0F1D33); }
+
+.cp-chip {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cp-chip--total { background: rgba(37, 99, 235, 0.08); color: #2563EB; }
+.cp-chip--selected { background: rgba(16, 185, 129, 0.1); color: #059669; }
+.cp-chip--active { background: rgba(245, 158, 11, 0.12); color: #B45309; }
 
 
 /* ===== ACTION BUTTONS (table) ===== */

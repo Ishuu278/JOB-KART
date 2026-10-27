@@ -274,19 +274,37 @@
       if (loader) loader.style.display = '';
       if (emptyState) emptyState.style.display = 'none';
       if (errorState) errorState.style.display = 'none';
+      __jobsPage = 1;
+      __jobsQuery = queryString || '';
+      __jobsAppend = false;
+      fetchJobsPage();
+    };
 
-      api.get('/jobs' + (queryString ? '?' + queryString : ''))
-        .then(function(jobs) { renderJobs(jobs); })
+    // Pagination state (server-side ?page&limit, Load More appends)
+    var __jobsPage = 1;
+    var __jobsQuery = '';
+    var __jobsAppend = false;
+    var PAGE_SIZE = 6;
+
+    function fetchJobsPage() {
+      var qs = __jobsQuery ? __jobsQuery + '&' : '';
+      qs += 'page=' + __jobsPage + '&limit=' + PAGE_SIZE;
+      api.get('/jobs?' + qs)
+        .then(function(data) {
+          // legacy array (no pagination requested server-side) or new envelope
+          var jobs = Array.isArray(data) ? data : (data.jobs || []);
+          renderJobs(jobs, Array.isArray(data) ? { hasMore: false } : data);
+        })
         .catch(function(err) {
           console.error('Failed to load jobs:', err);
           if (loader) loader.style.display = 'none';
           if (errorState) errorState.style.display = 'flex';
         });
-    };
+    }
 
-    api.get('/jobs')
-      .then(function(jobs) {
-        renderJobs(jobs);
+    api.get('/jobs?page=1&limit=' + PAGE_SIZE)
+      .then(function(data) {
+        renderJobs(data.jobs || [], data);
       })
       .catch(function(err) {
         console.error('Failed to load jobs:', err);
@@ -294,13 +312,19 @@
         if (errorState) errorState.style.display = 'flex';
       });
 
-    function renderJobs(jobs) {
+    function renderJobs(jobs, meta) {
+        meta = meta || {};
         if (loader) loader.style.display = 'none';
 
         if (!jobs || jobs.length === 0) {
-          if (emptyState) emptyState.style.display = 'flex';
+          if (!__jobsAppend) {
+            container.innerHTML = '';
+            if (emptyState) emptyState.style.display = 'flex';
+          }
           return;
         }
+
+        if (!__jobsAppend && ctaWrap) ctaWrap.style.display = '';
 
         if (ctaWrap) ctaWrap.style.display = '';
 
@@ -351,7 +375,31 @@
           '</div>';
         });
 
-        container.innerHTML = html;
+        if (__jobsAppend) {
+          container.insertAdjacentHTML('beforeend', html);
+        } else {
+          container.innerHTML = html;
+        }
+
+        // Load More button
+        var existingMore = document.getElementById('jobsLoadMoreWrap');
+        if (existingMore) existingMore.remove();
+        if (meta.hasMore) {
+          var wrap = document.createElement('div');
+          wrap.id = 'jobsLoadMoreWrap';
+          wrap.style.cssText = 'text-align:center; padding:22px 0 6px;';
+          wrap.innerHTML = '<button id="jobsLoadMore" style="padding:11px 34px; border:1px solid var(--navy,#1E3A5F); background:transparent; color:var(--navy,#1E3A5F); border-radius:999px; font-weight:700; font-size:0.88rem; cursor:pointer;">Load More Jobs</button>';
+          container.insertAdjacentElement('afterend', wrap);
+          wrap.querySelector('#jobsLoadMore').addEventListener('click', function () {
+            var btn = this;
+            btn.textContent = 'Loading…';
+            btn.disabled = true;
+            __jobsPage += 1;
+            __jobsAppend = true;
+            fetchJobsPage();
+          });
+        }
+        __jobsAppend = false;
 
         // Re-init all handlers for the newly rendered cards
         initJobAccordion();
