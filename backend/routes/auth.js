@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
-const { register, login, getProfile, updateProfile } = require('../controllers/authController');
+const { register, login, getProfile, updateProfile, switchRole } = require('../controllers/authController');
 const { resumeUpload, photoUpload, uploadResumeHandler, uploadPhotoHandler, multerErrorHandler } = require('../controllers/uploadController');
 const { protect } = require('../middleware/auth');
 
@@ -16,6 +16,7 @@ const authLimiter = rateLimit({
 
 router.post('/register', authLimiter, register);
 router.post('/login', authLimiter, login);
+router.post('/switch-role', protect, switchRole);
 router.get('/me', protect, getProfile);
 router.put('/profile', protect, updateProfile);
 router.post('/resume', protect, resumeUpload.single('resume'), uploadResumeHandler, multerErrorHandler);

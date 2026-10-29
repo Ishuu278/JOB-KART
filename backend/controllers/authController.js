@@ -19,8 +19,8 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Please provide all required fields' });
     }
 
-    if (role && role !== 'candidate') {
-      return res.status(400).json({ message: 'Registration is for candidates only. Recruiter accounts are provisioned by the administrator.' });
+    if (role && !['candidate', 'recruiter'].includes(role)) {
+      return res.status(400).json({ message: 'Role must be either candidate or recruiter' });
     }
 
     if (password.length < 6) {
@@ -31,10 +31,6 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Please provide a valid email address' });
     }
 
-    if (role && !['candidate', 'recruiter'].includes(role)) {
-      return res.status(400).json({ message: 'Role must be either candidate or recruiter' });
-    }
-
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
@@ -43,17 +39,55 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    const userRole = role === 'recruiter' ? 'recruiter' : 'candidate';
+    let assignedCompanyId = null;
+    if (userRole === 'recruiter') {
+      const Company = require('../models/Company');
+      const firstComp = await Company.findOne();
+      if (firstComp) assignedCompanyId = firstComp._id;
+    }
+
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
-      role: 'candidate',
-      phone: phone || ''
+      role: userRole,
+      phone: phone || '',
+      companyId: assignedCompanyId
     });
 
     const token = generateToken(user._id);
 
     res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      companyId: user.companyId || null,
+      token
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.switchRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!['candidate', 'recruiter'].includes(role)) {
+      return res.status(400).json({ message: 'Role must be candidate or recruiter' });
+    }
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    user.role = role;
+    if (role === 'recruiter' && !user.companyId) {
+      const Company = require('../models/Company');
+      const firstComp = await Company.findOne();
+      if (firstComp) user.companyId = firstComp._id;
+    }
+    await user.save();
+    const token = generateToken(user._id);
+    res.json({
       _id: user._id,
       name: user.name,
       email: user.email,

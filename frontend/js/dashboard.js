@@ -1853,16 +1853,22 @@
 
         if (!user) return;
 
-        // Update user role in localStorage
-        user.role = targetRole;
-        api.setUser(user);
-
-        // Redirect to appropriate dashboard
-        if (targetRole === 'recruiter') {
-          window.location.href = 'recruiter-dashboard.html';
-        } else {
-          window.location.href = 'candidate-dashboard.html';
-        }
+        api.post('/auth/switch-role', { role: targetRole })
+          .then(function(data) {
+            if (data && data.token) {
+              api.setToken(data.token);
+              api.setUser(data);
+            } else {
+              user.role = targetRole;
+              api.setUser(user);
+            }
+            window.location.href = targetRole === 'recruiter' ? 'recruiter-dashboard.html' : 'candidate-dashboard.html';
+          })
+          .catch(function() {
+            user.role = targetRole;
+            api.setUser(user);
+            window.location.href = targetRole === 'recruiter' ? 'recruiter-dashboard.html' : 'candidate-dashboard.html';
+          });
       });
     });
   }
