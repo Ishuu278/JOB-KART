@@ -27,6 +27,10 @@ const api = {
     const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
     const data = await res.json();
     if (!res.ok) {
+      if (res.status === 401) {
+        this.removeToken();
+        this.removeUser();
+      }
       throw new Error(data.message || 'Request failed');
     }
     return data;

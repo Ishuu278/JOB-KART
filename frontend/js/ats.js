@@ -152,6 +152,13 @@
       var msg = (err && err.message) || '';
       if (/Upload a PDF resume first/i.test(msg)) return renderNoResume('NO_RESUME');
       if (/scanned image|no readable text/i.test(msg)) return renderNoResume('SCANNED_PDF');
+      if (/not authorized|token failed|token invalid|no token/i.test(msg)) {
+        document.getElementById('atsLoading').innerHTML =
+          '<div class="ats-empty"><div class="big">🔐</div><h3 style="margin:0 0 6px;">Session Expired</h3>' +
+          '<p style="color:var(--dash-text-muted,#5A6B87);font-size:0.9rem;">Your login session has expired or is invalid. Please sign in again.</p>' +
+          '<a class="ats-btn" href="login.html">Sign in</a></div>';
+        return;
+      }
       document.getElementById('atsLoading').innerHTML =
         '<div class="ats-empty"><div class="big">⚠️</div><h3 style="margin:0 0 6px;">Could not load report</h3>' +
         '<p style="color:var(--dash-text-muted,#5A6B87);font-size:0.9rem;">' + esc(msg || 'Something went wrong.') + '</p></div>';
