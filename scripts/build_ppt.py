@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""JOB-KART academic presentation generator (16:9, 7 slides)."""
+"""JOB-KART academic presentation generator (16:9, 10 slides)."""
 import os
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
@@ -26,13 +26,13 @@ def crop(src, dst, anchor="top", y0=0):
         box = (0, max(0, y0), w, max(0, y0) + th)
     im.crop(box).save(os.path.join(CROPS, dst))
 
-crop("08-candidate-dash.png",        "s3-candidate.png")
-crop("10-recruiter-dash.png",        "s3-recruiter.png")
+crop("18-candidate-dash-v2.png",    "s3-candidate.png")
+crop("19-recruiter-dash-v4.png",      "s3-recruiter.png")
 crop("06-job-details.png",           "s4-details.png")
 crop("12-company.png",               "s4-company.png")
 crop("09-candidate-dash-charts.png", "s4-ccharts.png", anchor="band", y0=170)
 crop("11-recruiter-charts.png",      "s4-rcharts.png", anchor="band", y0=150)
-crop("02-home-mid.png",              "s6-home.png")
+crop("20-ats-scanner.png",            "s6-ats.png", anchor="band", y0=78)
 
 # ---------- palette ----------
 DARK   = RGBColor(0x0A, 0x1F, 0x44)
@@ -156,7 +156,7 @@ def subtitle(s, x, y, w, text, color=MUTED, size=12.5):
 def pagenum(s, n, on_dark=False):
     t = tb(s, SW - Inches(1.5), SH - Inches(0.45), Inches(1.1), Inches(0.28))
     p = para(t, first=True, align=PP_ALIGN.RIGHT)
-    run(p, f"{n:02d} / 07", 10, LBLUE if on_dark else MUTED, bold=True, spacing=1)
+    run(p, f"{n:02d} / 10", 10, LBLUE if on_dark else MUTED, bold=True, spacing=1)
 
 def brandfoot(s, on_dark=False):
     t = tb(s, Inches(0.55), SH - Inches(0.45), Inches(6), Inches(0.28))
@@ -247,18 +247,18 @@ run(p, "A full-stack job-portal platform connecting verified talent with India's
        "top employers — built on the MERN-style stack.", 12.5, RGBColor(0xC9, 0xD6, 0xEE))
 
 x, y = Inches(0.63), Inches(3.72)
-for txt in ("MongoDB", "Express.js 5", "Node.js", "JWT Auth", "Vanilla JS"):
+for txt in ("MongoDB", "Express.js 5", "Socket.io", "JWT Auth", "Vanilla JS"):
     x = chip(s, x, y, txt, DARK3, RGBColor(0xBF, 0xD3, 0xF5), h=0.34)
 
 # team cards
-t = tb(s, Inches(0.63), Inches(3.3), Inches(5), Inches(0.32))
+t = tb(s, Inches(0.63), Inches(4.12), Inches(5), Inches(0.32))
 p = para(t, first=True)
 run(p, "PRESENTED BY", 11, RGBColor(0x8F, 0xA6, 0xCB), bold=True, spacing=3)
 
 tcw, tch = Inches(3.42), Inches(1.02)
 for i, (name, reg, init) in enumerate(TEAM):
     xx = Inches(0.6) + (i % 2) * (tcw + Inches(0.18))
-    yy = Inches(3.62) + (i // 2) * (tch + Inches(0.16))
+    yy = Inches(4.48) + (i // 2) * (tch + Inches(0.16))
     rect(s, xx, yy, tcw, tch, DARK2, line=RGBColor(0x2E, 0x4C, 0x85), lw=1.0,
          shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.10)
     circle(s, xx + Inches(0.42), yy + tch / 2, Inches(0.26), BLUE)
@@ -354,7 +354,7 @@ title(s, Inches(0.6), Inches(0.72), Inches(9.5), "What the project set out to ac
 
 objectives = [
     ("Unified verified marketplace", "One trusted platform aggregating verified openings from real companies.", BLUE),
-    ("Transparent application tracking", "A real-time status pipeline — Applied → Under Review → Selected — for every candidate.", LBLUE),
+    ("Transparent application tracking", "A real-time status pipeline — Applied → Under Review → Shortlisted → Interview → Selected — for every candidate.", LBLUE),
     ("Efficient hiring workflow", "Visual pipeline and screening tools that replace manual spreadsheet tracking for recruiters.", AMBER),
     ("Insightful dashboards", "Live analytics charts for applications, hiring status and per-job performance.", GREEN),
     ("Secure role-based access", "JWT authentication with candidate/recruiter separation and hashed credentials.", PURPLE),
@@ -379,69 +379,159 @@ for i, (h1, b, c) in enumerate(objectives):
 t = tb(s, Inches(0.6), Inches(6.72), Inches(12), Inches(0.4))
 p = para(t, first=True)
 run(p, "Scope: ", 11, INK, bold=True)
-run(p, "full-stack web application — REST API + responsive frontend + cloud database, deployable on Vercel.", 11, MUTED)
+run(p, "full-stack web app — REST API, authenticated realtime, ATS resume intelligence + responsive frontend; self-hostable on any Node.js runtime with WebSocket support.", 11, MUTED)
 
 pagenum(s, 3)
 
 # ============================================================
-# SLIDE 4 — PROJECT FUNCTIONALITIES
+# SLIDE 4 — FUNCTIONALITIES · CANDIDATES
 # ============================================================
 s = slide()
 rect(s, 0, 0, SW, SH, WHITE)
 rect(s, 0, 0, SW, Inches(0.12), BLUE)
-kicker(s, Inches(0.6), Inches(0.4), "03", "Project Functionalities")
-title(s, Inches(0.6), Inches(0.7), Inches(9), "Key functionalities — one platform, two journeys")
+kicker(s, Inches(0.6), Inches(0.4), "03", "Project Functionalities · Candidates")
+title(s, Inches(0.6), Inches(0.7), Inches(12.2), "For candidates — discover, apply, track and get hired", size=26)
 
-cy, ch2 = Inches(1.5), Inches(2.52)
+cy, ch2 = Inches(1.5), Inches(4.75)
 cx, cw2 = Inches(0.6), Inches(6.05)
 rect(s, cx, cy, cw2, ch2, SKY, line=RGBColor(0xC7, 0xDA, 0xF8), lw=1.0, shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.055)
-t = tb(s, cx + Inches(0.3), cy + Inches(0.14), cw2 - Inches(0.6), Inches(0.35))
+t = tb(s, cx + Inches(0.3), cy + Inches(0.2), cw2 - Inches(0.6), Inches(0.35))
 p = para(t, first=True)
 run(p, "FOR CANDIDATES", 12.5, BLUE, bold=True, spacing=2)
-tf = tb(s, cx + Inches(0.3), cy + Inches(0.52), cw2 - Inches(0.55), ch2 - Inches(0.6))
-bullet(tf, "Smart discovery", "— filter by role, salary, location & experience", first=True)
-bullet(tf, "One-click apply", "— auto-filled profile + resume upload")
-bullet(tf, "Live tracker", "— Applied → Under Review → Selected")
-bullet(tf, "Saved jobs & compare", "— weigh two offers side-by-side")
-bullet(tf, "Profile meter", "— guided setup that boosts hiring odds", gap=0)
+tf = tb(s, cx + Inches(0.3), cy + Inches(0.66), cw2 - Inches(0.55), ch2 - Inches(0.8))
+bullet(tf, "Smart discovery", "— keyword search, type, location & fresher filters, salary sort", first=True, size=11, gap=7)
+bullet(tf, "One-click apply", "— auto-filled profile + PDF resume upload", size=11, gap=7)
+bullet(tf, "Deadline-aware apply", "— expired roles hidden, apply window enforced", size=11, gap=7)
+bullet(tf, "ATS scanner", "— resume score, fixes & job-fit ranking", size=11, gap=7)
+bullet(tf, "Saved jobs & compare", "— shortlist and weigh two offers", size=11, gap=7)
+bullet(tf, "Withdraw anytime", "— pull an application straight back from the tracker", size=11, gap=7)
+bullet(tf, "Profile & photo", "— guided setup, parsed skills & avatar upload", size=11, gap=7)
+bullet(tf, "Follow companies", "— one tap keeps their openings in view", size=11, gap=0)
 
 rx = Inches(6.85)
-rect(s, rx, cy, cw2, ch2, RGBColor(0xFD, 0xF3, 0xDF), line=RGBColor(0xF3, 0xDD, 0xAE), lw=1.0, shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.055)
-t = tb(s, rx + Inches(0.3), cy + Inches(0.14), cw2 - Inches(0.6), Inches(0.35))
+b1 = browser_frame(s, C("s3-candidate.png"), rx, cy, cw2)
+t = tb(s, rx, b1 + Inches(0.1), Inches(5.6), Inches(0.3))
 p = para(t, first=True)
-run(p, "FOR RECRUITERS", 12.5, AMBERD, bold=True, spacing=2)
-tf = tb(s, rx + Inches(0.3), cy + Inches(0.52), cw2 - Inches(0.55), ch2 - Inches(0.6))
-bullet(tf, "Post & manage jobs", "— skills, benefits, deadlines & status", mark_color=AMBER, first=True)
-bullet(tf, "Visual pipeline", "— hiring stages with live counts", mark_color=AMBER)
-bullet(tf, "Candidate screening", "— search & filter applicants instantly", mark_color=AMBER)
-bullet(tf, "Company branding", "— mission, gallery, benefits & reviews", mark_color=AMBER)
-bullet(tf, "Live analytics", "— per-job and status charts", mark_color=AMBER, gap=0)
+run(p, "Candidate dashboard — live stats, tracker & interviews", 10.5, MUTED, italic=True)
 
-y2 = Inches(4.32)
-b1 = browser_frame(s, C("s3-candidate.png"), Inches(0.6), y2, Inches(6.05))
-b2 = browser_frame(s, C("s3-recruiter.png"), Inches(6.85), y2, Inches(6.05))
-t = tb(s, Inches(0.6), b1 + Inches(0.12), Inches(6), Inches(0.3))
+wy = b1 + Inches(0.52)
+rect(s, rx, wy, cw2, Inches(1.6), PAPER, line=LINEC, lw=1.0, shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.09)
+t = tb(s, rx + Inches(0.28), wy + Inches(0.16), cw2 - Inches(0.5), Inches(0.3))
 p = para(t, first=True)
-run(p, "Candidate dashboard — live stats, timeline & interview schedule", 10.5, MUTED, italic=True)
-t = tb(s, Inches(6.85), b2 + Inches(0.12), Inches(6), Inches(0.3))
-p = para(t, first=True)
-run(p, "Recruiter dashboard — pipeline & application analytics", 10.5, MUTED, italic=True)
+run(p, "ALSO BUILT IN", 11, INK, bold=True, spacing=2)
+x = rx + Inches(0.28)
+for txt in ("Withdraw application", "Follow companies"):
+    x = chip(s, x, wy + Inches(0.56), txt, WHITE, BLUE, size=10)
+x = rx + Inches(0.28)
+for txt in ("Avatar upload", "Deadline alerts", "Compare jobs"):
+    x = chip(s, x, wy + Inches(1.02), txt, WHITE, TEAL, size=10)
 
 pagenum(s, 4)
 
 # ============================================================
-# SLIDE 5 — METHODOLOGY / ARCHITECTURE
+# SLIDE 5 — FUNCTIONALITIES · RECRUITERS
+# ============================================================
+s = slide()
+rect(s, 0, 0, SW, SH, WHITE)
+rect(s, 0, 0, SW, Inches(0.12), AMBER)
+kicker(s, Inches(0.6), Inches(0.4), "04", "Project Functionalities · Recruiters", color=AMBER)
+title(s, Inches(0.6), Inches(0.7), Inches(12.2), "For recruiters — post, screen, schedule and hire", size=26)
+
+cy = Inches(1.5); ch2 = Inches(4.75); cx = Inches(0.6); cw2 = Inches(6.05)
+rect(s, cx, cy, cw2, ch2, RGBColor(0xFD, 0xF3, 0xDF), line=RGBColor(0xF3, 0xDD, 0xAE), lw=1.0, shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.055)
+t = tb(s, cx + Inches(0.3), cy + Inches(0.2), cw2 - Inches(0.6), Inches(0.35))
+p = para(t, first=True)
+run(p, "FOR RECRUITERS", 12.5, AMBERD, bold=True, spacing=2)
+tf = tb(s, cx + Inches(0.3), cy + Inches(0.66), cw2 - Inches(0.55), ch2 - Inches(0.8))
+bullet(tf, "Post & manage jobs", "— skills, benefits, deadlines & status", mark_color=AMBER, first=True, size=11, gap=7)
+bullet(tf, "Visual pipeline", "— stage moves with live candidate counts", mark_color=AMBER, size=11, gap=7)
+bullet(tf, "Candidate screening", "— search, filters & full profiles", mark_color=AMBER, size=11, gap=7)
+bullet(tf, "Saved leads", "— candidates who saved your job but never applied", mark_color=AMBER, size=11, gap=7)
+bullet(tf, "Interview scheduling", "— date, validated meeting link & status history", mark_color=AMBER, size=11, gap=7)
+bullet(tf, "Company branding", "— mission, gallery, benefits & reviews", mark_color=AMBER, size=11, gap=7)
+bullet(tf, "Contact inbox", "— site enquiries stored, recruiters only", mark_color=AMBER, size=11, gap=7)
+bullet(tf, "Live analytics & chat", "— charts plus real-time messaging", mark_color=AMBER, size=11, gap=0)
+
+rx = Inches(6.85)
+b2 = browser_frame(s, C("s3-recruiter.png"), rx, cy, cw2)
+t = tb(s, rx, b2 + Inches(0.1), Inches(5.6), Inches(0.3))
+p = para(t, first=True)
+run(p, "Recruiter dashboard — pipeline, applicants & analytics", 10.5, MUTED, italic=True)
+
+wy = b2 + Inches(0.52)
+rect(s, rx, wy, cw2, Inches(1.6), PAPER, line=LINEC, lw=1.0, shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.09)
+t = tb(s, rx + Inches(0.28), wy + Inches(0.16), cw2 - Inches(0.5), Inches(0.3))
+p = para(t, first=True)
+run(p, "RECRUITER TOOLKIT", 11, INK, bold=True, spacing=2)
+x = rx + Inches(0.28)
+for txt in ("Saved leads", "Contact inbox", "Close jobs"):
+    x = chip(s, x, wy + Inches(0.56), txt, WHITE, AMBERD, size=10)
+x = rx + Inches(0.28)
+for txt in ("Delete reviews", "Status history", "Interview links"):
+    x = chip(s, x, wy + Inches(1.02), txt, WHITE, TEAL, size=10)
+
+pagenum(s, 5)
+
+# ============================================================
+# SLIDE 6 — PLATFORM & ENGAGEMENT LAYER
+# ============================================================
+s = slide()
+rect(s, 0, 0, SW, SH, PAPER)
+rect(s, 0, 0, Inches(0.14), SH, PURPLE)
+kicker(s, Inches(0.6), Inches(0.42), "05", "Platform & Engagement Layer", color=PURPLE)
+title(s, Inches(0.6), Inches(0.72), Inches(12.1), "Everything between \u201capply\u201d and \u201chire\u201d", size=26)
+subtitle(s, Inches(0.6), Inches(1.2), Inches(12.1),
+         "Realtime, social and messaging primitives that keep both sides coming back — all served by the same JWT-authenticated API.")
+
+features = [
+    ("Realtime chat", "1:1 messaging with read receipts, presence & history", BLUE),
+    ("Typing indicators", "live \u201ctyping…\u201d state on both sides of the chat", TEAL),
+    ("Notification bell", "unread counts, mark-one & mark-all-read", PURPLE),
+    ("Follow companies", "persisted follower lists with live counts", GREEN),
+    ("Withdraw application", "candidates exit the pipeline themselves", AMBER),
+    ("Saved-lead mining", "warm intent from saved-but-not-applied candidates", RGBColor(0xE1, 0x1D, 0x48)),
+    ("Contact inbox", "enquiries persisted in Mongo, gated to recruiters", TEAL),
+    ("Paged & safe search", "server-side pagination, regex-escaped queries", DARK2),
+]
+fw2, fh2 = Inches(2.98), Inches(1.98)
+gx, gy2 = Inches(0.6), Inches(1.92)
+gapx, gapy = Inches(0.18), Inches(0.2)
+for i, (h1, b, c) in enumerate(features):
+    xx = gx + (i % 4) * (fw2 + gapx)
+    yy = gy2 + (i // 4) * (fh2 + gapy)
+    rect(s, xx, yy, fw2, fh2, WHITE, line=LINEC, lw=1.0, shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.07)
+    rect(s, xx, yy, Inches(0.09), fh2, c, shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.5)
+    t = tb(s, xx + Inches(0.26), yy + Inches(0.16), Inches(0.9), Inches(0.35))
+    p = para(t, first=True)
+    run(p, f"{i+1:02d}", 16, c, bold=True)
+    t = tb(s, xx + Inches(0.26), yy + Inches(0.58), fw2 - Inches(0.45), Inches(0.5))
+    p = para(t, first=True, line=1.05)
+    run(p, h1, 12.5, INK, bold=True)
+    t = tb(s, xx + Inches(0.26), yy + Inches(1.1), fw2 - Inches(0.45), Inches(0.78))
+    p = para(t, first=True, line=1.12)
+    run(p, b, 9.8, MUTED)
+
+sy4 = Inches(6.24)
+rect(s, Inches(0.6), sy4, Inches(12.13), Inches(0.62), DARK, shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.32)
+t = tb(s, Inches(0.9), sy4, Inches(11.53), Inches(0.62), anchor=MSO_ANCHOR.MIDDLE)
+p = para(t, first=True, align=PP_ALIGN.CENTER)
+run(p, "Always on — deadline enforcement · duplicate-apply blocking · expired listings hidden · role-gated endpoints", 10.5, WHITE, bold=True)
+
+pagenum(s, 6)
+
+# ============================================================
+# SLIDE 7 — METHODOLOGY / ARCHITECTURE
 # ============================================================
 s = slide()
 rect(s, 0, 0, SW, SH, PAPER)
 rect(s, SW - Inches(0.14), 0, Inches(0.14), SH, BLUE)
-kicker(s, Inches(0.6), Inches(0.42), "04", "Methodology / Architecture")
+kicker(s, Inches(0.6), Inches(0.42), "06", "Methodology / Architecture")
 title(s, Inches(0.6), Inches(0.72), Inches(9.5), "Three-tier architecture, secured by design")
 
 layers = [
-    ("FRONTEND", "HTML5 · CSS3 · Vanilla JavaScript · Chart.js · Font Awesome 6 · DM Sans · Dark Mode", BLUE),
-    ("BACKEND",  "Node.js · Express.js 5 · JWT · bcryptjs · express-rate-limit · dotenv · Nodemon", TEAL),
-    ("DATABASE", "MongoDB Atlas · Mongoose ODM · 6 collections · aggregation pipelines", GREEN),
+    ("FRONTEND", "HTML5 · CSS3 · Vanilla JS · Chart.js · Socket.io · Font Awesome 6 · DM Sans · Dark Mode", BLUE),
+    ("BACKEND",  "Node.js · Express.js 5 · Socket.io · JWT · bcryptjs · multer · pdfjs-dist", TEAL),
+    ("DATABASE", "MongoDB Atlas · Mongoose ODM · 8 collections · aggregation pipelines", GREEN),
 ]
 for (name, techs, c), yy in zip(layers, (Inches(1.62 + i * 1.12) for i in range(3))):
     rect(s, Inches(0.6), yy, Inches(7.15), Inches(0.92), WHITE, line=LINEC, lw=1.0, shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.12)
@@ -471,7 +561,7 @@ t = tb(s, Inches(0.6), sy2, Inches(2.3), Inches(0.4), anchor=MSO_ANCHOR.MIDDLE)
 p = para(t, first=True)
 run(p, "SECURITY LAYER", 11, INK, bold=True, spacing=1)
 x = Inches(2.55)
-for txt in ("bcrypt hashing", "JWT tokens", "role-based access", "XSS sanitizer", "rate limiting"):
+for txt in ("bcrypt hashing", "JWT + socket auth", "role-based access", "output encoding", "rate limiting"):
     x = chip(s, x, sy2 - Inches(0.05), txt, SKY, RGBColor(0x1D, 0x4E, 0xD8), size=10)
 
 # bottom: full-width request-flow block diagram
@@ -481,14 +571,14 @@ p = para(t, first=True)
 run(p, "REQUEST FLOW", 10.5, INK, bold=True, spacing=2)
 t = tb(s, Inches(4.3), Inches(5.99), Inches(8.15), Inches(0.24))
 p = para(t, first=True, align=PP_ALIGN.RIGHT)
-run(p, "Auth: register / login → bcrypt verify → signed JWT → role-gated routes", 8.5, MUTED, italic=True)
+run(p, "Auth: login → bcrypt verify → signed JWT → role-gated REST + authenticated sockets", 8.5, MUTED, italic=True)
 
 flow = [
     ("Client", "browser · fetch API", DARK2, RGBColor(0xD7, 0xE4, 0xFF)),
-    ("Express.js API", "27 endpoints · middleware", BLUE, RGBColor(0xD7, 0xE4, 0xFF)),
-    ("JWT / bcrypt", "auth & role guard", PURPLE, RGBColor(0xE4, 0xDC, 0xFC)),
+    ("Express.js API", "49 endpoints · middleware", BLUE, RGBColor(0xD7, 0xE4, 0xFF)),
+    ("Auth & realtime", "JWT · Socket.io", PURPLE, RGBColor(0xE4, 0xDC, 0xFC)),
     ("Mongoose ODM", "models & schemas", TEAL, RGBColor(0xC9, 0xE8, 0xF3)),
-    ("MongoDB Atlas", "6 collections", GREEN, RGBColor(0xC7, 0xF2, 0xE4)),
+    ("MongoDB Atlas", "8 collections", GREEN, RGBColor(0xC7, 0xF2, 0xE4)),
 ]
 fw, fh = Inches(2.12), Inches(0.6)
 for i, (h1, sub, fill, scol) in enumerate(flow):
@@ -503,22 +593,69 @@ for i, (h1, sub, fill, scol) in enumerate(flow):
     if i < 4:
         arrow(s, xx + fw + Inches(0.04), Inches(6.57), Inches(0.2), LBLUE)
 
-pagenum(s, 5)
+pagenum(s, 7)
 
 # ============================================================
-# SLIDE 6 — RESULTS
+# SLIDE 8 — SECURITY & DATA INTEGRITY
+# ============================================================
+s = slide()
+rect(s, 0, 0, SW, SH, WHITE)
+rect(s, 0, 0, SW, Inches(0.12), PURPLE)
+kicker(s, Inches(0.6), Inches(0.4), "07", "Security & Data Integrity", color=PURPLE)
+title(s, Inches(0.6), Inches(0.7), Inches(12.2), "Secured at every layer — not just at login", size=26)
+
+spy, sph = Inches(1.5), Inches(3.9)
+lpw = Inches(6.05)
+rect(s, Inches(0.6), spy, lpw, sph, SKY, line=RGBColor(0xC7, 0xDA, 0xF8), lw=1.0, shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.055)
+t = tb(s, Inches(0.9), spy + Inches(0.2), lpw - Inches(0.6), Inches(0.35))
+p = para(t, first=True)
+run(p, "AUTHENTICATION & ACCESS", 12.5, BLUE, bold=True, spacing=2)
+tf = tb(s, Inches(0.9), spy + Inches(0.66), lpw - Inches(0.55), sph - Inches(0.8))
+bullet(tf, "Candidate-only registration", "— recruiter accounts provisioned by the administrator", first=True, size=11, gap=9)
+bullet(tf, "JWT everywhere", "— REST headers plus the socket handshake; invalid tokens rejected at connect", size=11, gap=9)
+bullet(tf, "Role gates per route", "— candidate-only and recruiter-only endpoints enforced", size=11, gap=9)
+bullet(tf, "Ownership checks", "— conversations, applications, inbox & reviews verified per user", size=11, gap=9)
+bullet(tf, "Rate-limited auth", "— login and registration throttled against brute force", size=11, gap=8)
+bullet(tf, "Bcrypt hashing", "— credentials stored as salted hashes, never plaintext", size=11, gap=0)
+
+rpx = Inches(6.85)
+rect(s, rpx, spy, lpw, sph, RGBColor(0xF1, 0xEC, 0xFE), line=RGBColor(0xDD, 0xD3, 0xFB), lw=1.0, shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.055)
+t = tb(s, rpx + Inches(0.3), spy + Inches(0.2), lpw - Inches(0.6), Inches(0.35))
+p = para(t, first=True)
+run(p, "VALIDATION & DATA INTEGRITY", 12.5, PURPLE, bold=True, spacing=2)
+tf = tb(s, rpx + Inches(0.3), spy + Inches(0.66), lpw - Inches(0.55), sph - Inches(0.8))
+bullet(tf, "Output encoding", "— user text escaped before it reaches the DOM (XSS)", mark_color=PURPLE, first=True, size=11, gap=9)
+bullet(tf, "Safe links", "— interview URLs restricted to http:// and https://", mark_color=PURPLE, size=11, gap=9)
+bullet(tf, "Review integrity", "— 1–5 rating validation, one review per user, recomputed aggregates", mark_color=PURPLE, size=11, gap=9)
+bullet(tf, "Deadline enforcement", "— expired postings hidden, late applications rejected", mark_color=PURPLE, size=11, gap=9)
+bullet(tf, "Input hygiene", "— regex-escaped search, ObjectId guards, length limits", mark_color=PURPLE, size=11, gap=8)
+bullet(tf, "Duplicate guards", "— one application per job, one review per company", mark_color=PURPLE, size=11, gap=0)
+
+vy = Inches(5.72)
+rect(s, Inches(0.6), vy, Inches(12.13), Inches(0.86), DARK, shape=MSO_SHAPE.ROUNDED_RECTANGLE, radius=0.2)
+t = tb(s, Inches(0.95), vy + Inches(0.13), Inches(11.4), Inches(0.26))
+p = para(t, first=True)
+run(p, "VERIFIED IN TESTS", 10.5, AMBER, bold=True, spacing=2)
+x = Inches(0.95)
+for txt in ("anonymous sockets rejected", "cross-role probes → 401 / 403", "duplicate application blocked", "XSS payloads rendered as text"):
+    x = chip(s, x, vy + Inches(0.44), txt, DARK3, RGBColor(0xBF, 0xD3, 0xF5), size=9.5)
+
+pagenum(s, 8)
+
+# ============================================================
+# SLIDE 9 — RESULTS
 # ============================================================
 s = slide()
 rect(s, 0, 0, SW, SH, WHITE)
 rect(s, 0, 0, SW, Inches(0.12), AMBER)
-kicker(s, Inches(0.6), Inches(0.42), "05", "Results", color=AMBER)
+kicker(s, Inches(0.6), Inches(0.42), "08", "Results", color=AMBER)
 title(s, Inches(0.6), Inches(0.72), Inches(9.5), "Outputs achieved — a working platform")
 
 kpis = [
-    ("27", "REST endpoints", BLUE),
-    ("6", "data collections", GREEN),
-    ("13.8k+", "lines of code", TEAL),
-    ("10+", "responsive pages", AMBER),
+    ("49", "REST endpoints", BLUE),
+    ("8", "data collections", GREEN),
+    ("20k+", "lines of code", TEAL),
+    ("12", "responsive pages", AMBER),
 ]
 kw, kh = Inches(2.72), Inches(1.32)
 for i, (num, lab, c) in enumerate(kpis):
@@ -535,34 +672,36 @@ t = tb(s, Inches(0.6), Inches(3.28), Inches(6), Inches(0.4))
 p = para(t, first=True)
 run(p, "DEMONSTRATED OUTPUTS", 12, INK, bold=True, spacing=2)
 tf = tb(s, Inches(0.6), Inches(3.68), Inches(6.15), Inches(2.8))
-bullet(tf, "End-to-end hiring loop", "— post, apply, track, shortlist, hire in one platform", first=True)
-bullet(tf, "Rich company pages", "— 7 seeded companies, culture pages & 12 verified reviews")
-bullet(tf, "Analytics dashboards", "— Chart.js visuals for both roles via aggregation pipelines")
-bullet(tf, "Secure demo environment", "— JWT sessions, demo users & full hiring-pipeline data")
+bullet(tf, "End-to-end hiring loop", "— post, apply, screen, schedule & hire", first=True)
+bullet(tf, "ATS resume scanner", "— PDF parsing, resume score & job-fit ranking")
+bullet(tf, "Real-time collaboration", "— chat, typing, presence & read receipts")
+bullet(tf, "Rich company pages", "— 7 companies, culture pages & verified reviews")
+bullet(tf, "Engagement engine", "— follows, withdrawals & warm saved leads")
+bullet(tf, "Analytics dashboards", "— Chart.js visuals for both roles")
 
-bot = browser_frame(s, C("s6-home.png"), Inches(7.15), Inches(3.32), Inches(5.55))
+bot = browser_frame(s, C("s6-ats.png"), Inches(7.15), Inches(3.32), Inches(5.55))
 t = tb(s, Inches(7.15), bot + Inches(0.12), Inches(5.5), Inches(0.3))
 p = para(t, first=True)
-run(p, "Homepage — animated stats, featured roles & company strip", 10.5, MUTED, italic=True)
+run(p, "ATS scanner — resume score, fixes & live job-fit ranking", 10.5, MUTED, italic=True)
 
 ry = Inches(6.72)
 t = tb(s, Inches(0.6), ry - Inches(0.02), Inches(1.3), Inches(0.4), anchor=MSO_ANCHOR.MIDDLE)
 p = para(t, first=True)
 run(p, "ALSO VERIFIED", 11, INK, bold=True, spacing=1)
 x = Inches(2.0)
-for txt, c in (("Candidate & recruiter roles", BLUE), ("Mobile-first layout", GREEN), ("Zero framework overhead", TEAL)):
+for txt, c in (("Authenticated realtime", BLUE), ("Mobile-first layout", GREEN), ("Zero build step", TEAL)):
     x = chip(s, x, ry - Inches(0.08), txt, PAPER, c, size=10)
 
-pagenum(s, 6)
+pagenum(s, 9)
 
 # ============================================================
-# SLIDE 7 — CONCLUSION & FUTURE WORK
+# SLIDE 10 — CONCLUSION & FUTURE WORK
 # ============================================================
 s = slide()
 rect(s, 0, 0, SW, SH, DARK)
 circle(s, SW - Inches(1.2), Inches(-0.6), Inches(2.4), DARK3, alpha=55)
 circle(s, Inches(-0.8), SH + Inches(0.5), Inches(2.1), BLUE, alpha=16)
-kicker(s, Inches(0.6), Inches(0.45), "06", "Conclusion & Future Work", on_dark=True)
+kicker(s, Inches(0.6), Inches(0.45), "09", "Conclusion & Future Work", on_dark=True)
 title(s, Inches(0.6), Inches(0.75), Inches(11), "Where the project stands — and where it goes next", color=WHITE, size=28)
 
 # conclusion panel
@@ -572,11 +711,12 @@ t = tb(s, cx2 + Inches(0.3), cy2 + Inches(0.2), cw3 - Inches(0.6), Inches(0.35))
 p = para(t, first=True)
 run(p, "CONCLUSION", 12.5, LBLUE, bold=True, spacing=2)
 tf = tb(s, cx2 + Inches(0.3), cy2 + Inches(0.62), cw3 - Inches(0.55), ch3 - Inches(0.8))
-bullet(tf, "Fully functional platform", "— every core flow works end-to-end on live data", dark=True, first=True, gap=10)
-bullet(tf, "Both journeys served", "— candidates track applications; recruiters manage a visual pipeline", dark=True, gap=10)
-bullet(tf, "Security-first stack", "— JWT auth, bcrypt hashing, XSS sanitization & rate limiting", dark=True, gap=10)
-bullet(tf, "Lean by design", "— framework-free frontend: zero build step, instant deploys", dark=True, gap=10)
-bullet(tf, "Deploy-ready", "— cloud database + static frontend, live on Vercel", dark=True, gap=0)
+bullet(tf, "Fully functional platform", "— every core flow works end-to-end on live data", dark=True, first=True, size=11, gap=7)
+bullet(tf, "Both journeys served", "— candidates track applications; recruiters manage a pipeline", dark=True, size=11, gap=7)
+bullet(tf, "Resume intelligence", "— PDF parsing, ATS scoring & job-fit matching", dark=True, size=11, gap=7)
+bullet(tf, "Real-time collaboration", "— chat, typing, presence, read receipts & alerts", dark=True, size=11, gap=7)
+bullet(tf, "Security-first stack", "— JWT + socket auth, ownership checks & rate limiting", dark=True, size=11, gap=7)
+bullet(tf, "Lean by design", "— framework-free frontend: zero build step, instant deploys", dark=True, size=11, gap=0)
 
 # future work panel
 fx2 = Inches(6.85)
@@ -585,10 +725,10 @@ t = tb(s, fx2 + Inches(0.3), cy2 + Inches(0.2), cw3 - Inches(0.6), Inches(0.35))
 p = para(t, first=True)
 run(p, "FUTURE ENHANCEMENTS", 12.5, AMBER, bold=True, spacing=2)
 future = [
-    ("Email & push alerts", "application status updates and new-job notifications", BLUE),
-    ("AI job matching", "resume-based recommendation of best-fit roles", PURPLE),
-    ("Resume parsing", "auto-fill profiles from uploaded CVs", TEAL),
-    ("Admin verification", "company and posting approval workflow", AMBER),
+    ("Email & push alerts", "notify candidates outside the in-app bell", BLUE),
+    ("AI-assisted screening", "LLM ranking beyond rule-based ATS scores", PURPLE),
+    ("Admin verification", "company and posting approval workflow", TEAL),
+    ("Multi-recruiter teams", "per-company workspaces, roles & permissions", AMBER),
     ("PWA mobile app", "installable experience with offline support", GREEN),
 ]
 fy = cy2 + Inches(0.66)
@@ -608,7 +748,7 @@ run(p, "Thank you", 17, WHITE, bold=True)
 run(p, "  ·  Questions welcome", 14, RGBColor(0x9F, 0xB4, 0xD8), italic=True)
 
 brandfoot(s, on_dark=True)
-pagenum(s, 7, on_dark=True)
+pagenum(s, 10, on_dark=True)
 
 prs.save(OUT)
 print("Saved:", OUT)

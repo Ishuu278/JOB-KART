@@ -13,12 +13,14 @@ const api = {
   setUser: (user) => localStorage.setItem('jobkart_user', JSON.stringify(user)),
   removeUser: () => localStorage.removeItem('jobkart_user'),
 
+  baseUrl: API_BASE,
+
   async request(endpoint, options = {}) {
     const token = this.getToken();
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
+    const headers = { ...options.headers };
+    if (!(options.body instanceof FormData)) {
+      headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+    }
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -35,15 +37,27 @@ const api = {
   },
 
   post(endpoint, body) {
-    return this.request(endpoint, { method: 'POST', body: JSON.stringify(body) });
+    const isForm = body instanceof FormData;
+    return this.request(endpoint, {
+      method: 'POST',
+      body: isForm ? body : JSON.stringify(body)
+    });
   },
 
   put(endpoint, body) {
-    return this.request(endpoint, { method: 'PUT', body: JSON.stringify(body) });
+    const isForm = body instanceof FormData;
+    return this.request(endpoint, {
+      method: 'PUT',
+      body: isForm ? body : JSON.stringify(body)
+    });
   },
 
   delete(endpoint) {
     return this.request(endpoint, { method: 'DELETE' });
+  },
+
+  upload(endpoint, formData) {
+    return this.request(endpoint, { method: 'POST', body: formData });
   },
 
   async login(email, password) {

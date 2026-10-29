@@ -166,6 +166,8 @@
   // ===== ROLE SELECTOR =====
   roleOptions.forEach(function (option) {
     option.addEventListener('click', function () {
+      var radio = this.querySelector('input[type="radio"]');
+      if (radio && radio.disabled) return;
       roleOptions.forEach(function (o) { o.classList.remove('active'); });
       this.classList.add('active');
     });
@@ -231,7 +233,8 @@
     var email = document.getElementById('registerEmail').value.trim();
     var phone = document.getElementById('registerPhone').value.trim();
     var password = document.getElementById('registerPassword').value;
-    var role = document.querySelector('input[name="role"]:checked').value;
+    var roleEl = document.querySelector('input[name="role"]:checked');
+    var role = roleEl ? roleEl.value : 'candidate';
     var submitBtn = document.getElementById('registerSubmitBtn');
 
     if (!name || !email || !password) {

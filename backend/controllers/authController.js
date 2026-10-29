@@ -117,19 +117,21 @@ exports.updateProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    if (name) user.name = name;
-    if (phone) user.phone = phone;
-    if (skills) user.skills = skills;
-    if (experience) user.experience = experience;
-    if (education) user.education = education;
-    if (portfolioUrl) user.portfolioUrl = portfolioUrl;
-    if (companyId !== undefined) user.companyId = companyId;
+    if (name) user.name = String(name).trim();
+    if (phone !== undefined) user.phone = String(phone).trim();
+    if (Array.isArray(skills)) user.skills = skills.map(s => String(s).trim()).filter(Boolean);
+    if (experience !== undefined) user.experience = String(experience).trim();
+    if (education !== undefined) user.education = String(education).trim();
+    if (portfolioUrl !== undefined) user.portfolioUrl = String(portfolioUrl).trim();
+    if (user.role === 'recruiter' && companyId !== undefined) {
+      user.companyId = (companyId && /^[0-9a-fA-F]{24}$/.test(String(companyId))) ? companyId : null;
+    }
 
     let completion = 0;
     if (user.name) completion += 20;
     if (user.email) completion += 20;
     if (user.phone) completion += 15;
-    if (user.skills.length > 0) completion += 15;
+    if (user.skills && user.skills.length > 0) completion += 15;
     if (user.experience) completion += 15;
     if (user.education) completion += 15;
     user.profileCompletion = completion;

@@ -13,8 +13,8 @@ async function login(email, password) {
   console.log('candidate login:', cand._id ? 'OK' : cand);
   console.log('official recruiter login:', rec._id ? 'OK (' + rec.email + ')' : rec);
 
-  const cSock = io(B, { transports: ['websocket'] });
-  const rSock = io(B, { transports: ['websocket'] });
+  const cSock = io(B, { transports: ['websocket'], auth: { token: cand.token } });
+  const rSock = io(B, { transports: ['websocket'], auth: { token: rec.token } });
 
   const received = { statusUpdate: null, notifCand: null, appNew: null, notifRec: null, msgCand: null, msgRec: null, readReceipt: null };
 

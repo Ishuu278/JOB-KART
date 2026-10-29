@@ -356,10 +356,10 @@
     if (breadcrumbCurrent) breadcrumbCurrent.textContent = company.name;
 
     var industryEl = document.getElementById('cIndustry');
-    if (industryEl) industryEl.innerHTML = '💼 ' + (company.industry || '');
+    if (industryEl) industryEl.innerHTML = '💼 ' + escapeHtml(company.industry || '');
 
     var locationEl = document.getElementById('cLocation');
-    if (locationEl) locationEl.innerHTML = '📍 ' + (company.hq || '');
+    if (locationEl) locationEl.innerHTML = '📍 ' + escapeHtml(company.hq || '');
 
     var websiteBtn = document.getElementById('cWebsiteBtn');
     if (websiteBtn && company.website) {
@@ -402,7 +402,7 @@
       company.mvv.forEach(function(item) {
         var card = document.createElement('div');
         card.className = 'company-mvv-card';
-        card.innerHTML = '<span class="company-mvv-icon">' + item.icon + '</span><h4>' + item.label + '</h4><p>' + item.desc + '</p>';
+        card.innerHTML = '<span class="company-mvv-icon">' + escapeHtml(item.icon) + '</span><h4>' + escapeHtml(item.label) + '</h4><p>' + escapeHtml(item.desc) + '</p>';
         mvvGrid.appendChild(card);
       });
     }
@@ -415,7 +415,7 @@
         var numStr = String(idx + 1).padStart(2, '0');
         var row = document.createElement('div');
         row.className = 'company-value-row';
-        row.innerHTML = '<div class="company-value-num">' + numStr + '</div><div class="company-value-text">' + val + '</div>';
+        row.innerHTML = '<div class="company-value-num">' + numStr + '</div><div class="company-value-text">' + escapeHtml(val) + '</div>';
         valuesList.appendChild(row);
       });
     }
@@ -427,7 +427,7 @@
       company.gallery.forEach(function(photo) {
         var item = document.createElement('div');
         item.className = 'company-gallery-item';
-        item.innerHTML = '<img src="' + photo.url + '" alt="' + photo.label + '" loading="lazy" /><div class="company-gallery-overlay"><span>' + photo.label + '</span></div>';
+        item.innerHTML = '<img src="' + escapeHtml(photo.url) + '" alt="' + escapeHtml(photo.label) + '" loading="lazy" /><div class="company-gallery-overlay"><span>' + escapeHtml(photo.label) + '</span></div>';
         galleryGrid.appendChild(item);
       });
     }
@@ -439,7 +439,7 @@
       company.benefits.forEach(function(b) {
         var card = document.createElement('div');
         card.className = 'company-benefit-card';
-        card.innerHTML = '<span class="company-benefit-icon">' + b.icon + '</span><span>' + b.label + '</span>';
+        card.innerHTML = '<span class="company-benefit-icon">' + escapeHtml(b.icon) + '</span><span>' + escapeHtml(b.label) + '</span>';
         benefitsGrid.appendChild(card);
       });
     }
@@ -456,10 +456,15 @@
     var sidebarWebsite = document.getElementById('cSidebarWebsite');
     if (sidebarWebsite) {
       var url = (company.website || '').indexOf('http') === 0 ? company.website : 'https://' + (company.website || '');
-      sidebarWebsite.innerHTML = '<a href="' + url + '" target="_blank">' + (company.website || '') + '</a>';
+      if (!/^https?:\/\//i.test(url)) url = '#';
+      sidebarWebsite.innerHTML = '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(company.website || '') + '</a>';
     }
     var sidebarEmail = document.getElementById('cSidebarEmail');
-    if (sidebarEmail) sidebarEmail.innerHTML = '<a href="mailto:' + (company.email || '') + '">' + (company.email || '') + '</a>';
+    if (sidebarEmail) {
+      var email = String(company.email || '');
+      var emailHref = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? 'mailto:' + email : '#';
+      sidebarEmail.innerHTML = '<a href="' + escapeHtml(emailHref) + '">' + escapeHtml(email) + '</a>';
+    }
     var sidebarType = document.getElementById('cSidebarType');
     if (sidebarType) sidebarType.textContent = company.type || 'Private Company';
 
@@ -471,7 +476,7 @@
         var box = document.createElement('div');
         box.className = 'company-stat-box';
         var valId = stat.label === 'Followers' ? ' id="stat-followers-val"' : (stat.label === 'Hiring Rate' ? ' id="stat-hiring-rate"' : '');
-        box.innerHTML = '<span class="company-stat-num"' + valId + ' data-target="' + stat.target + '">0</span><span class="company-stat-label">' + stat.label + '</span>';
+        box.innerHTML = '<span class="company-stat-num"' + valId + ' data-target="' + escapeHtml(stat.target) + '">0</span><span class="company-stat-label">' + escapeHtml(stat.label) + '</span>';
         statsContainer.appendChild(box);
       });
       animateStatsCounters();
@@ -517,15 +522,16 @@
       socialContainer.innerHTML = '';
       company.socials.forEach(function(soc) {
         var pill = document.createElement('a');
-        pill.href = soc.url;
+        var socialUrl = String(soc.url || '#');
+        pill.href = /^https?:\/\//i.test(socialUrl) ? socialUrl : '#';
         pill.className = 'company-social-pill';
-        pill.innerHTML = '<span>' + soc.icon + '</span> ' + soc.label;
+        pill.innerHTML = '<span>' + escapeHtml(soc.icon) + '</span> ' + escapeHtml(soc.label);
         socialContainer.appendChild(pill);
       });
     }
 
     // Load reviews from API
-    api.get('/reviews/' + company._id).then(function(reviews) {
+    function renderReviewsFromAPI(reviews) {
       var container = document.getElementById('cReviews');
       if (!container) return;
       if (!reviews || reviews.length === 0) {
@@ -550,7 +556,9 @@
       });
       var countEl = document.getElementById('cRatingCount');
       if (countEl) countEl.textContent = reviews.length + ' Reviews';
-    }).catch(function() {});
+    }
+
+    api.get('/reviews/' + company._id).then(renderReviewsFromAPI).catch(function() {});
 
     // Render jobs from API data
     var jobsContainer = document.getElementById('companyJobsContainer');
@@ -596,15 +604,100 @@
     // Follow button
     var followBtn = document.getElementById('followBtn') || document.getElementById('cFollowBtn');
     if (followBtn) {
+      var currentUser = (typeof api !== 'undefined' && api.isLoggedIn()) ? api.getUser() : null;
+      var isFollowing = currentUser && company.followers && company.followers.some(function(f) {
+        return String(typeof f === 'object' ? f._id : f) === String(currentUser._id);
+      });
+      if (isFollowing) {
+        followBtn.textContent = 'Following';
+        followBtn.classList.add('following');
+      } else {
+        followBtn.textContent = 'Follow Company';
+        followBtn.classList.remove('following');
+      }
+
       followBtn.onclick = function() {
         if (!api.isLoggedIn()) {
-          alert('Please login to follow companies.');
+          showToast('Please login to follow companies.');
           return;
         }
         api.post('/companies/' + company._id + '/follow')
           .then(function(result) {
-            followBtn.textContent = result.following ? 'Following' : 'Follow';
+            followBtn.textContent = result.following ? 'Following' : 'Follow Company';
             followBtn.classList.toggle('following', result.following);
+            showToast(result.following ? 'Following ' + company.name : 'Unfollowed ' + company.name);
+          })
+          .catch(function(err) {
+            showToast(err.message || 'Action failed');
+          });
+      };
+    }
+
+    // Star rating input for review form
+    var starBtns = document.querySelectorAll('.star-btn');
+    var ratingInput = document.getElementById('reviewRating');
+    var selectedRating = 0;
+
+    starBtns.forEach(function(btn) {
+      btn.onclick = function() {
+        selectedRating = parseInt(btn.getAttribute('data-star'), 10);
+        if (ratingInput) ratingInput.value = selectedRating;
+        starBtns.forEach(function(b) {
+          var sv = parseInt(b.getAttribute('data-star'), 10);
+          b.textContent = sv <= selectedRating ? '★' : '☆';
+          b.classList.toggle('star-active', sv <= selectedRating);
+        });
+      };
+      btn.onmouseenter = function() {
+        var hoverVal = parseInt(btn.getAttribute('data-star'), 10);
+        starBtns.forEach(function(b) {
+          var sv = parseInt(b.getAttribute('data-star'), 10);
+          b.textContent = sv <= hoverVal ? '★' : '☆';
+          b.classList.toggle('star-active', sv <= hoverVal);
+        });
+      };
+      btn.onmouseleave = function() {
+        starBtns.forEach(function(b) {
+          var sv = parseInt(b.getAttribute('data-star'), 10);
+          b.textContent = sv <= selectedRating ? '★' : '☆';
+          b.classList.toggle('star-active', sv <= selectedRating);
+        });
+      };
+    });
+
+    // Review form submission to API
+    var reviewForm = document.getElementById('reviewForm');
+    if (reviewForm) {
+      reviewForm.onsubmit = function(e) {
+        e.preventDefault();
+        if (!api.isLoggedIn()) {
+          showToast('Please sign in to submit a company review');
+          return;
+        }
+        var role = (document.getElementById('reviewRole') ? document.getElementById('reviewRole').value.trim() : '');
+        var text = (document.getElementById('reviewText') ? document.getElementById('reviewText').value.trim() : '');
+        var rating = ratingInput ? parseInt(ratingInput.value, 10) : selectedRating;
+
+        if (!text || text.length < 5) {
+          showToast('Please write at least 5 characters of review text');
+          return;
+        }
+        if (!rating || rating < 1) {
+          showToast('Please select a star rating');
+          return;
+        }
+
+        api.post('/reviews', { companyId: company._id, stars: rating, text: text, role: role })
+          .then(function() {
+            reviewForm.style.display = 'none';
+            var successEl = document.getElementById('reviewSuccess');
+            if (successEl) successEl.classList.add('show');
+            showToast('Review submitted successfully!');
+            // Re-fetch reviews to display immediately
+            api.get('/reviews/' + company._id + '?sort=' + currentSort).then(renderReviewsFromAPI);
+          })
+          .catch(function(err) {
+            showToast(err.message || 'Could not submit review');
           });
       };
     }
@@ -613,28 +706,10 @@
     var sortSelect = document.getElementById('reviewSortSelect');
     if (sortSelect) {
       sortSelect.value = currentSort;
-      sortSelect.addEventListener('change', function() {
+      sortSelect.onchange = function() {
         currentSort = this.value;
-        // Re-fetch reviews with new sort
-        api.get('/reviews/' + company._id + '?sort=' + currentSort).then(function(reviews) {
-          var container = document.getElementById('cReviews');
-          if (!container) return;
-          if (!reviews || reviews.length === 0) {
-            container.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:16px 0;">No reviews yet.</p>';
-            return;
-          }
-          container.innerHTML = '';
-          reviews.forEach(function(rev) {
-            var item = document.createElement('div');
-            item.className = 'company-review-item';
-            item.innerHTML =
-              '<div class="company-reviewer-row"><div><span class="company-reviewer-name">' + escapeHtml(rev.author) + '</span><span class="company-reviewer-role">' + escapeHtml(rev.role || '') + '</span></div><span class="company-review-date">' + escapeHtml(rev.createdAt ? new Date(rev.createdAt).toLocaleDateString() : '') + '</span></div>' +
-              '<div class="company-review-stars">' + starsFromNumber(rev.stars) + '</div>' +
-              '<div class="company-review-text">"' + escapeHtml(rev.text) + '"</div>';
-            container.appendChild(item);
-          });
-        });
-      });
+        api.get('/reviews/' + company._id + '?sort=' + currentSort).then(renderReviewsFromAPI);
+      };
     }
   }
 

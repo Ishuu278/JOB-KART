@@ -134,6 +134,15 @@
     return;
   }
 
+  var currentUser = api.getUser();
+  if (currentUser && currentUser.role !== 'candidate') {
+    document.getElementById('atsLoading').innerHTML =
+      '<div class="ats-empty"><div class="big">🎯</div><h3 style="margin:0 0 6px;">Candidate feature</h3>' +
+      '<p style="color:var(--dash-text-muted,#5A6B87);font-size:0.9rem;">The ATS resume scanner analyses a candidate\'s own resume and job fit. Recruiter accounts do not have a resume profile.</p>' +
+      '<a class="ats-btn" href="recruiter-dashboard.html">Back to dashboard</a></div>';
+    return;
+  }
+
   api.get('/ats/report')
     .then(renderReport)
     .catch(function (err) {

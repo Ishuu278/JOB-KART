@@ -1,10 +1,11 @@
+const path = require('path');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Company = require('./models/Company');
 const Job = require('./models/Job');
 const Review = require('./models/Review');
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const companiesData = [
   {
@@ -568,7 +569,16 @@ const seedDB = async () => {
       console.log(`Created company: ${company.name}`);
 
       if (jobs && jobs.length > 0) {
-        const jobDocs = jobs.map(job => ({ ...job, companyId: company._id }));
+        // Keep demo postings current: posted in the last three weeks, open for 30–45 days.
+        // Hardcoded 2026 dates made every seeded role look expired within months.
+        const now = Date.now();
+        const day = 24 * 60 * 60 * 1000;
+        const jobDocs = jobs.map((job, index) => ({
+          ...job,
+          companyId: company._id,
+          postedDate: new Date(now - (index + 1) * day),
+          applyBefore: new Date(now + (30 + index * 3) * day)
+        }));
         await Job.insertMany(jobDocs);
         console.log(`  Added ${jobs.length} jobs`);
       }

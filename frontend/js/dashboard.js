@@ -31,7 +31,7 @@
   var RECRUITER_DATA = {
     user: { name: '', initials: '', company: '', email: '' },
     stats: { activeJobs: 0, totalApplications: 0, shortlisted: 0, totalJobViews: 0 },
-    pipeline: { applied: 0, underReview: 0, shortlisted: 0, interview: 0, selected: 0, total: 0 },
+    pipeline: { applied: 0, underReview: 0, shortlisted: 0, interview: 0, interviewScheduled: 0, selected: 0, total: 0 },
     recentApplicants: [],
     recentActivity: [],
     charts: {
@@ -76,7 +76,7 @@
     switch (type) {
       case 'applied': case 'applicant': return ICONS.send;
       case 'viewed': return ICONS.eye;
-      case 'interview': return ICONS.video;
+      case 'interview': case 'interviewScheduled': return ICONS.video;
       case 'saved': return ICONS.bookmark;
       case 'selected': return ICONS.check;
       case 'rejected': return ICONS.x;
@@ -949,14 +949,14 @@
       var job = app.jobId || {};
       var company = (job.companyId && typeof job.companyId === 'object') ? job.companyId : {};
       var jobTitle = job.title || 'a position';
-      var companyName = company.name || '';
+      var companyName = escapeHtml(company.name || '');
       var status = app.status || 'applied';
       var timeAgo = getTimeAgo(app.appliedDate || app.createdAt);
 
       var iconClass = 'activity-icon--blue';
       var iconSvg = ICONS.send;
       if (status === 'shortlisted') { iconClass = 'activity-icon--green'; iconSvg = ICONS.star; }
-      else if (status === 'interview') { iconClass = 'activity-icon--purple'; iconSvg = ICONS.video; }
+      else if (status === 'interview' || status === 'interviewScheduled') { iconClass = 'activity-icon--purple'; iconSvg = ICONS.video; }
       else if (status === 'selected') { iconClass = 'activity-icon--green'; iconSvg = ICONS.check; }
       else if (status === 'rejected') { iconClass = 'activity-icon--red'; iconSvg = ICONS.x; }
 
@@ -1029,7 +1029,7 @@
     if (!tbody) return;
 
     var interviews = applications.filter(function(app) {
-      return app.status === 'interview' || app.status === 'shortlisted';
+      return app.status === 'interviewScheduled' || app.status === 'interview';
     });
 
     if (badgeEl) badgeEl.textContent = interviews.length + ' scheduled';
@@ -1048,13 +1048,20 @@
       var companyId = company._id || '';
       var jobTitle = job.title || 'Position';
 
+      var when = app.interviewDate
+        ? new Date(app.interviewDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+        : 'To be scheduled';
+      var join = /^https?:\/\//i.test(app.interviewLink || '')
+        ? '<a href="' + escapeHtml(app.interviewLink) + '" target="_blank" rel="noopener noreferrer" class="dash-btn-sm dash-btn-sm--outline">Join</a>'
+        : '—';
+
       html += '<tr>' +
         '<td><div class="dash-table-company"><div class="dash-table-company-logo">' + escapeHtml(companyInitials) + '</div>' +
           '<span class="dash-table-strong">' + (companyId ? '<a href="company.html?id=' + companyId + '" style="color:inherit; text-decoration:none;">' + escapeHtml(companyName) + '</a>' : escapeHtml(companyName)) + '</span></div></td>' +
         '<td>' + escapeHtml(jobTitle) + '</td>' +
-        '<td>TBD</td>' +
-        '<td>TBD</td>' +
-        '<td><a href="#" class="dash-btn-sm dash-btn-sm--outline" data-action="view-details">Details</a></td>' +
+        '<td>' + escapeHtml(when) + '</td>' +
+        '<td>' + join + '</td>' +
+        '<td><a href="' + (job._id ? 'job-details.html?id=' + job._id : '#') + '" class="dash-btn-sm dash-btn-sm--outline">Details</a></td>' +
       '</tr>';
     });
     tbody.innerHTML = html;
@@ -1254,7 +1261,7 @@
       var iconSvg = ICONS.send;
       var actionText = 'New application from <strong>' + escapeHtml(candidateName) + '</strong> for ' + escapeHtml(jobTitle);
       if (status === 'shortlisted') { iconClass = 'activity-icon--green'; iconSvg = ICONS.star; actionText = '<strong>' + escapeHtml(candidateName) + '</strong> shortlisted for ' + escapeHtml(jobTitle); }
-      else if (status === 'interview') { iconClass = 'activity-icon--purple'; iconSvg = ICONS.video; actionText = 'Interview invitation sent to <strong>' + escapeHtml(candidateName) + '</strong>'; }
+      else if (status === 'interview' || status === 'interviewScheduled') { iconClass = 'activity-icon--purple'; iconSvg = ICONS.video; actionText = 'Interview invitation sent to <strong>' + escapeHtml(candidateName) + '</strong>'; }
       else if (status === 'selected') { iconClass = 'activity-icon--green'; iconSvg = ICONS.check; actionText = '<strong>' + escapeHtml(candidateName) + '</strong> selected for ' + escapeHtml(jobTitle); }
       else if (status === 'rejected') { iconClass = 'activity-icon--red'; iconSvg = ICONS.x; actionText = '<strong>' + escapeHtml(candidateName) + '</strong> application rejected for ' + escapeHtml(jobTitle); }
 
@@ -1283,11 +1290,11 @@
       { key: 'applied', label: 'Applied', dot: 1 },
       { key: 'underReview', label: 'Under Review', dot: 2 },
       { key: 'shortlisted', label: 'Shortlisted', dot: 3 },
-      { key: 'interview', label: 'Interview', dot: 4 },
+      { key: 'interviewScheduled', label: 'Interview', dot: 4 },
       { key: 'selected', label: 'Selected', dot: 5 }
     ];
 
-    var pipeline = { applied: 0, underReview: 0, shortlisted: 0, interview: 0, selected: 0 };
+    var pipeline = { applied: 0, underReview: 0, shortlisted: 0, interview: 0, interviewScheduled: 0, selected: 0 };
     if (pipelineData && pipelineData.length > 0) {
       pipelineData.forEach(function(p) {
         if (pipeline[p._id] !== undefined) pipeline[p._id] = p.count;
@@ -1339,8 +1346,18 @@
       var subtitleEl = document.getElementById('dashSubtitle');
       if (subtitleEl) subtitleEl.textContent = "Here's what's happening with your career today.";
 
-      // Render profile completion from real user data
+      // Render immediately from the cached session, then refresh from the API.
       renderProfileCompletion(user);
+    }
+
+    if (typeof api !== 'undefined' && api.isLoggedIn()) {
+      api.get('/auth/me').then(function(profile) {
+        if (!profile) return;
+        var merged = Object.assign({}, api.getUser() || {}, profile);
+        api.setUser(merged);
+        populateDashboardHeader(merged);
+        renderProfileCompletion(merged);
+      }).catch(function() { /* keep cached profile */ });
     }
 
     // Fetch real data from API, then render
@@ -1357,7 +1374,7 @@
           var statMap = {
             'statTotalApps': d.stats.totalApplications,
             'statUnderReview': d.stats.underReview,
-            'statInterviews': d.stats.interviewScheduled,
+            'statInterview': d.stats.interviewScheduled,
             'statSelected': d.stats.selected
           };
           Object.keys(statMap).forEach(function(id) {
@@ -1374,7 +1391,7 @@
             d.charts.applicationsPerMonth.data = data.monthlyData.map(function(m) { return m.count; });
           }
           if (data.statusData && data.statusData.length > 0) {
-            var statusMap = { applied: 0, underReview: 1, shortlisted: 2, interview: 3, selected: 4, rejected: 5 };
+            var statusMap = { applied: 0, underReview: 1, shortlisted: 2, interview: 3, interviewScheduled: 3, selected: 4, rejected: 5 };
             // Rebuild from scratch so stale counts never linger between loads
             var statusCounts = new Array(d.charts.statusDistribution.data.length).fill(0);
             data.statusData.forEach(function(s) {
@@ -2207,12 +2224,12 @@
           '<span class="cp-chip cp-chip--active">' + s.active + ' in progress</span>';
 
         // details grid — editorial label-over-value pairs
-        var skills = (c.skills || []).join(', ') || '—';
+        var safePort = safeUrl(c.portfolioUrl);
         document.getElementById('cpDetails').innerHTML =
           '<div><div class="cp-label">Skills</div><div class="cp-value">' + escHtml(skills) + '</div></div>' +
           '<div><div class="cp-label">Experience</div><div class="cp-value">' + escHtml(c.experience || '—') + '</div></div>' +
           '<div><div class="cp-label">Education</div><div class="cp-value">' + escHtml(c.education || '—') + '</div></div>' +
-          '<div><div class="cp-label">Portfolio</div><div class="cp-value">' + (c.portfolioUrl ? '<a href="' + c.portfolioUrl + '" target="_blank" style="color:#2563EB; word-break:break-all;">' + escHtml(c.portfolioUrl) + '</a>' : '<span style="color:var(--text-muted,#64748B);">—</span>') + '</div></div>';
+          '<div><div class="cp-label">Portfolio</div><div class="cp-value">' + (safePort ? '<a href="' + safePort + '" target="_blank" rel="noopener noreferrer" style="color:#2563EB; word-break:break-all;">' + escHtml(c.portfolioUrl) + '</a>' : '<span style="color:var(--text-muted,#64748B);">' + (c.portfolioUrl ? escHtml(c.portfolioUrl) : '—') + '</span>') + '</div></div>';
 
         // resume
         var resumeBtn = document.getElementById('cpResumeBtn');
@@ -2480,6 +2497,15 @@
 
   function escHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function safeUrl(u) {
+    if (!u) return '';
+    var s = String(u).trim();
+    if (!/^https?:\/\//i.test(s) && !/^\//.test(s)) return '';
+    return s.replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }

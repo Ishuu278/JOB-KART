@@ -8,12 +8,16 @@ exports.submitContact = async (req, res) => {
       return res.status(400).json({ message: 'Please provide name, email, and message' });
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
+      return res.status(400).json({ message: 'Please provide a valid email address' });
+    }
+
     const contactMessage = await ContactMessage.create({
-      name,
-      email,
-      phone: phone || '',
-      service: service || '',
-      message
+      name: String(name).trim(),
+      email: String(email).trim().toLowerCase(),
+      phone: String(phone || '').trim(),
+      service: String(service || '').trim(),
+      message: String(message).trim()
     });
 
     res.status(201).json({ message: 'Message sent successfully', id: contactMessage._id });

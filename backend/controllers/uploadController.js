@@ -16,11 +16,17 @@ const PHOTO_MAX = 3 * 1024 * 1024;   // 3 MB
 const safeName = (orig) =>
   orig.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-40);
 
+const MIME_PHOTO_MAP = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp'
+};
+
 const resumeUpload = multer({
   storage: multer.diskStorage({
     destination: UPLOAD_DIR,
     filename: (req, file, cb) =>
-      cb(null, `resume-${req.user._id}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}${path.extname(safeName(file.originalname))}`)
+      cb(null, `resume-${req.user._id}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.pdf`)
   }),
   limits: { fileSize: RESUME_MAX },
   fileFilter: (req, file, cb) => {
@@ -33,8 +39,14 @@ const resumeUpload = multer({
 const photoUpload = multer({
   storage: multer.diskStorage({
     destination: UPLOAD_DIR,
-    filename: (req, file, cb) =>
-      cb(null, `photo-${req.user._id}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}${path.extname(safeName(file.originalname))}`)
+    filename: (req, file, cb) => {
+      let ext = MIME_PHOTO_MAP[file.mimetype];
+      if (!ext) {
+        const m = String(file.originalname).match(/\.(jpe?g|png|webp)$/i);
+        ext = m ? m[0].toLowerCase() : '.jpg';
+      }
+      cb(null, `photo-${req.user._id}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}${ext}`);
+    }
   }),
   limits: { fileSize: PHOTO_MAX },
   fileFilter: (req, file, cb) => {

@@ -5,6 +5,12 @@
 (function() {
   'use strict';
 
+  function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
   // Helper to retrieve URL parameters
   function getQueryParam(param) {
     var urlParams = new URLSearchParams(window.location.search);
@@ -249,7 +255,7 @@
 
     var companyName = document.getElementById('company-name');
     if (companyName) {
-      companyName.innerHTML = '<a href="company.html?id=' + company._id + '" style="color:inherit; text-decoration:none;">' + company.name + '</a>';
+      companyName.innerHTML = '<a href="company.html?id=' + encodeURIComponent(company._id) + '" style="color:inherit; text-decoration:none;">' + escapeHtml(company.name) + '</a>';
     }
 
     var jobLocation = document.getElementById('job-location');
@@ -323,7 +329,7 @@
           var simEl = document.createElement('a');
           simEl.href = 'job-details.html?id=' + sim._id;
           simEl.className = 'similar-job-link';
-          simEl.innerHTML = '<span>' + sim.title + '</span>';
+          simEl.innerHTML = '<span>' + escapeHtml(sim.title) + '</span>';
           similarList.appendChild(simEl);
         });
         if (similar.length === 0) {
@@ -349,6 +355,20 @@
     var applyToJob = function() {
       window.location.href = 'openings.html?apply=' + job._id;
     };
+
+    // Respect the application deadline advertised on the posting.
+    if (job.applyBefore) {
+      var deadline = new Date(job.applyBefore);
+      deadline.setHours(23, 59, 59, 999);
+      if (Date.now() > deadline.getTime()) {
+        applyBtn.textContent = 'Applications Closed';
+        applyBtn.disabled = true;
+        applyBtn.style.opacity = '0.6';
+        applyBtn.style.cursor = 'not-allowed';
+        applyBtn.onclick = null;
+        return;
+      }
+    }
 
     // If logged in as candidate, check whether already applied → offer withdraw
     if (typeof api !== 'undefined' && api.isLoggedIn()) {
@@ -404,7 +424,7 @@
 
     var companyName = document.getElementById('company-name');
     if (companyName) {
-      companyName.innerHTML = `<a href="company.html?id=${company.id}" style="color:inherit; text-decoration:none;">${company.name}</a>`;
+      companyName.innerHTML = `<a href="company.html?id=${encodeURIComponent(company.id)}" style="color:inherit; text-decoration:none;">${escapeHtml(company.name)}</a>`;
     }
 
     // Header Tags
@@ -491,10 +511,10 @@
           simEl.style.marginBottom = '16px';
           
           simEl.innerHTML = `
-            <img src="${sim.logo}" alt="${sim.company}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid var(--border-soft);">
+            <img src="${encodeURI(sim.logo || '')}" alt="${escapeHtml(sim.company)}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid var(--border-soft);">
             <div>
-              <h4 style="margin: 0; color: var(--navy-dark, #0f2548); font-size: 0.95rem; font-family: var(--font-body); font-weight: 600; line-height: 1.3;">${sim.title}</h4>
-              <small style="color: var(--text-muted, #64748b); font-size: 0.8rem;">${sim.company}</small>
+              <h4 style="margin: 0; color: var(--navy-dark, #0f2548); font-size: 0.95rem; font-family: var(--font-body); font-weight: 600; line-height: 1.3;">${escapeHtml(sim.title)}</h4>
+              <small style="color: var(--text-muted, #64748b); font-size: 0.8rem;">${escapeHtml(sim.company)}</small>
             </div>
           `;
           similarList.appendChild(simEl);

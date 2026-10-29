@@ -14,7 +14,10 @@
       if (socket && socket.connected) return;
 
       if (!socket) {
-        socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+        socket = io(SOCKET_URL, {
+          transports: ['websocket', 'polling'],
+          auth: { token: localStorage.getItem('jobkart_token') || '' }
+        });
 
         // re-dispatch all known events to registered listeners
         ['status:updated', 'notification:new', 'message:new', 'message:read',

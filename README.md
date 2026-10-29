@@ -415,7 +415,7 @@ open frontend/index.html
 | Method | Endpoint | Auth | Body | Description |
 |--------|----------|------|------|-------------|
 | `POST` | `/contact` | No | `{ name, email, message, ... }` | Submit contact form |
-| `GET` | `/contact` | No | — | Get all messages |
+| `GET` | `/contact` | Yes (Recruiter) | — | Get all contact messages |
 
 ---
 

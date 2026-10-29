@@ -1,6 +1,7 @@
 const Message = require('../models/Message');
 const User = require('../models/User');
 const Application = require('../models/Application');
+const Job = require('../models/Job');
 const { createAndEmit } = require('../utils/notify');
 
 // conversationId format: "{candidateId}_{jobId}"
@@ -8,7 +9,10 @@ const buildConversationId = (candidateId, jobId) => `${candidateId}_${jobId}`;
 
 // Validate membership of a conversation
 async function authorizeConversation(conversationId, user) {
-  const [candidateId, jobId] = conversationId.split('_');
+  if (!conversationId || typeof conversationId !== 'string' || !conversationId.includes('_')) {
+    return false;
+  }
+  const [candidateId] = conversationId.split('_');
   if (user.role === 'candidate') {
     return String(candidateId) === String(user._id);
   }
@@ -52,13 +56,10 @@ exports.getConversations = async (req, res) => {
     const conversations = [];
     for (const [convId, c] of convMap) {
       const [candidateId, jobId] = convId.split('_');
-      const [candidate, job] = await Promise.all([
+      const [candidate, jobDoc] = await Promise.all([
         User.findById(candidateId).select('name profilePhoto'),
-        Application.findById(jobId).populate('jobId', 'title') // jobId here is actually applicationId
+        Job.findById(jobId).select('title')
       ]);
-      // conversationId embeds the JOB id, not application id — re-lookup
-      const Job = require('../models/Job');
-      const jobDoc = await Job.findById(jobId).select('title');
       conversations.push({
         ...c,
         candidate: candidate ? { _id: candidate._id, name: candidate.name, profilePhoto: candidate.profilePhoto } : { name: 'Unknown' },
@@ -98,10 +99,17 @@ exports.sendMessage = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to post to this conversation' });
     }
 
-    const [candidateId, jobId] = conversationId.split('_');
-    const receiverId = String(req.user._id) === String(candidateId)
-      ? (await User.findOne({ role: 'recruiter' }))._id
-      : candidateId;
+    const [candidateId] = conversationId.split('_');
+    let receiverId;
+    if (String(req.user._id) === String(candidateId)) {
+      const recruiter = await User.findOne({ role: 'recruiter' }).select('_id');
+      if (!recruiter) {
+        return res.status(500).json({ message: 'No recruiter account is currently configured' });
+      }
+      receiverId = recruiter._id;
+    } else {
+      receiverId = candidateId;
+    }
 
     const message = await Message.create({
       conversationId,

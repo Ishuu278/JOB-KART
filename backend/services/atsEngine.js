@@ -224,7 +224,12 @@ async function scanResume(text, userSkills, Job) {
   const resumeProfile = buildResumeProfile(text);
   const suggestions = buildSuggestions(resumeProfile);
 
-  const jobs = await Job.find({ status: 'active' }).populate('companyId', 'name').lean();
+  const cutoff = new Date();
+  cutoff.setHours(0, 0, 0, 0);
+  const jobs = await Job.find({
+    status: 'active',
+    $or: [{ applyBefore: null }, { applyBefore: { $gte: cutoff } }]
+  }).populate('companyId', 'name').lean();
   const matches = jobs
     .map(j => scoreJobFit(j, resumeProfile, userSkills))
     .map(m => {

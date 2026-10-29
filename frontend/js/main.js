@@ -3,6 +3,16 @@
 (function () {
   'use strict';
 
+  // Output encoding: API content is inserted into HTML below, so escape it here.
+  function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // Same encoding is valid inside double-quoted HTML attributes.
+  var escapeAttr = escapeHtml;
+
   // ===== ACTIVE NAV LINK =====
   // Auto-highlight current page nav link based on window.location.pathname
   function setActiveNav() {
@@ -337,29 +347,32 @@
           var skills = job.skills || [];
           var fresher = job.fresher;
 
+          var safeTitle = escapeHtml(job.title);
+          var safeCompany = escapeHtml(companyName);
+
           var skillsHtml = '';
           skills.forEach(function(skill) {
-            skillsHtml += '<span class="skill-tag">' + skill + '</span>';
+            skillsHtml += '<span class="skill-tag">' + escapeHtml(skill) + '</span>';
           });
 
           var fresherBadge = fresher ? '<span class="fresher-badge">Freshers Can Apply</span>' : '';
 
-          html += '<div class="job-card" data-job-id="' + jobId + '">' +
+          html += '<div class="job-card" data-job-id="' + escapeAttr(jobId) + '">' +
             '<div class="job-header">' +
               '<div class="job-header-left">' +
-                '<h3 class="job-title">' + job.title + '</h3>' +
+                '<h3 class="job-title">' + safeTitle + '</h3>' +
                 '<div class="job-meta">' +
-                  '<span>🏢 <a href="company.html?id=' + companyId + '" style="color:var(--accent); font-weight:600;">' + companyName + '</a></span>' +
-                  '<span>📍 ' + (job.location || '') + '</span>' +
-                  '<span>💼 ' + (job.exp || '') + '</span>' +
-                  (job.sal ? '<span>💰 ' + job.sal + '</span>' : '') +
+                  '<span>🏢 <a href="company.html?id=' + escapeAttr(companyId) + '" style="color:var(--accent); font-weight:600;">' + safeCompany + '</a></span>' +
+                  '<span>📍 ' + escapeHtml(job.location || '') + '</span>' +
+                  '<span>💼 ' + escapeHtml(job.exp || '') + '</span>' +
+                  (job.sal ? '<span>💰 ' + escapeHtml(job.sal) + '</span>' : '') +
                   fresherBadge +
                 '</div>' +
               '</div>' +
               '<div class="job-header-actions" style="display:flex; gap:8px; align-items:center;">' +
-                '<button class="job-apply-btn" data-apply-job="' + jobId + '" data-apply-title="' + job.title + '">Apply</button>' +
-                '<a href="job-details.html?id=' + jobId + '" class="job-apply-btn" style="background:transparent; color:var(--navy); border:1px solid var(--navy); text-decoration:none; font-size:0.82rem; padding:6px 14px; border-radius:var(--pill);">Details</a>' +
-                '<button class="job-compare-btn" data-compare-job="' + jobId + '" data-compare-title="' + job.title + '" data-compare-company="' + companyName + '" data-compare-exp="' + (job.exp || '') + '" data-compare-sal="' + (job.sal || '') + '" data-compare-location="' + (job.location || '') + '" data-compare-type="' + (job.type || '') + '" data-compare-skills="' + skills.join('|') + '">' +
+                '<button class="job-apply-btn" data-apply-job="' + escapeAttr(jobId) + '" data-apply-title="' + escapeAttr(job.title) + '">Apply</button>' +
+                '<a href="job-details.html?id=' + escapeAttr(jobId) + '" class="job-apply-btn" style="background:transparent; color:var(--navy); border:1px solid var(--navy); text-decoration:none; font-size:0.82rem; padding:6px 14px; border-radius:var(--pill);">Details</a>' +
+                '<button class="job-compare-btn" data-compare-job="' + escapeAttr(jobId) + '" data-compare-title="' + escapeAttr(job.title) + '" data-compare-company="' + escapeAttr(companyName) + '" data-compare-exp="' + escapeAttr(job.exp || '') + '" data-compare-sal="' + escapeAttr(job.sal || '') + '" data-compare-location="' + escapeAttr(job.location || '') + '" data-compare-type="' + escapeAttr(job.type || '') + '" data-compare-skills="' + escapeAttr(skills.join('|')) + '">' +
                   '<svg class="job-compare-btn-icon" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>' +
                   '<span class="job-compare-btn-label">Compare</span>' +
                 '</button>' +
@@ -368,7 +381,7 @@
             '</div>' +
             '<div class="job-body">' +
               '<div class="job-body-inner">' +
-                '<p>' + (job.description || '') + '</p>' +
+                '<p>' + escapeHtml(job.description || '') + '</p>' +
                 (skillsHtml ? '<div class="skills-list">' + skillsHtml + '</div>' : '') +
               '</div>' +
             '</div>' +
@@ -569,19 +582,53 @@
         return;
       }
 
-      if (api.isLoggedIn()) {
-        // Logged in user - apply via API with real MongoDB ObjectId
-        var data = { jobId: jobId };
-        api.post('/applications/apply', data)
-          .then(function(result) {
+      if (!api.isLoggedIn()) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      var submitBtn = document.getElementById('applyBtn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting application...';
+      }
+
+      function submitApplication() {
+        api.post('/applications/apply', { jobId: jobId })
+          .then(function() {
             showFormSuccess(form, document.getElementById('applySuccess'));
           })
           .catch(function(err) {
             console.error('Apply form error:', err);
             alert(err.message || 'Something went wrong. Please try again.');
+          })
+          .finally(function() {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Submit Application';
+            }
+          });
+      }
+
+      var resumeInput = form.elements['resume'];
+      var resumeFile = resumeInput && resumeInput.files && resumeInput.files[0];
+
+      if (resumeFile) {
+        var resumeData = new FormData();
+        resumeData.append('resume', resumeFile);
+        api.upload('/auth/resume', resumeData)
+          .then(function() {
+            submitApplication();
+          })
+          .catch(function(err) {
+            alert('Resume upload failed: ' + (err.message || 'Please upload a valid PDF resume'));
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Submit Application';
+            }
           });
       } else {
-        window.location.href = 'login.html';
+        submitApplication();
       }
     });
   }
@@ -815,8 +862,10 @@
     // Show/hide bar
     if (jobs.length > 0) {
       bar.classList.add('compare-bar--visible');
+      bar.setAttribute('aria-hidden', 'false');
     } else {
       bar.classList.remove('compare-bar--visible');
+      bar.setAttribute('aria-hidden', 'true');
       return;
     }
 
@@ -827,10 +876,10 @@
       item.className = 'compare-bar__item';
       item.innerHTML =
         '<div class="compare-bar__item-info">' +
-          '<div class="compare-bar__item-title">' + (job.title || 'Untitled') + '</div>' +
-          '<div class="compare-bar__item-company">' + (job.company || '') + '</div>' +
+          '<div class="compare-bar__item-title">' + escapeHtml(job.title || 'Untitled') + '</div>' +
+          '<div class="compare-bar__item-company">' + escapeHtml(job.company || '') + '</div>' +
         '</div>' +
-        '<button class="compare-bar__item-remove" data-compare-remove="' + job.id + '" aria-label="Remove from comparison">&times;</button>';
+        '<button class="compare-bar__item-remove" data-compare-remove="' + escapeAttr(job.id) + '" aria-label="Remove from comparison">&times;</button>';
       jobsContainer.appendChild(item);
 
       // Add divider between items

@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Application = require('../models/Application');
 const Job = require('../models/Job');
 const User = require('../models/User');
@@ -34,6 +35,14 @@ exports.applyToJob = async (req, res) => {
     const job = await Job.findById(jobId);
     if (!job) return res.status(404).json({ message: 'Job not found' });
     if (job.status === 'closed') return res.status(400).json({ message: 'This job is closed and no longer accepting applications' });
+
+    if (job.applyBefore) {
+      const deadline = new Date(job.applyBefore);
+      deadline.setHours(23, 59, 59, 999);
+      if (Date.now() > deadline.getTime()) {
+        return res.status(400).json({ message: 'The application deadline for this job has passed' });
+      }
+    }
 
     const existing = await Application.findOne({ jobId, candidateId: req.user._id });
     if (existing) {
@@ -116,6 +125,9 @@ exports.getAllApplications = async (req, res) => {
 // ---------- Recruiter: applicants for one job ----------
 exports.getJobApplicants = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.jobId)) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
     const applications = await Application.find({ jobId: req.params.jobId })
       .populate('candidateId', 'name email profilePhoto profileCompletion skills experience education portfolioUrl resume isOnline lastSeen')
       .sort({ appliedDate: -1 });
@@ -128,6 +140,9 @@ exports.getJobApplicants = async (req, res) => {
 // ---------- Recruiter: one candidate's applications ----------
 exports.getCandidateApplications = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.candidateId)) {
+      return res.status(404).json({ message: 'Candidate not found' });
+    }
     const applications = await Application.find({ candidateId: req.params.candidateId })
       .populate({ path: 'jobId', select: 'title companyId', populate: { path: 'companyId', select: 'name' } })
       .sort({ appliedDate: -1 });
@@ -140,6 +155,9 @@ exports.getCandidateApplications = async (req, res) => {
 // ---------- Any party: single application ----------
 exports.getApplication = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
     const application = await Application.findById(req.params.id)
       .populate({ path: 'jobId', populate: { path: 'companyId', select: 'name logo' } })
       .populate('candidateId', 'name email profilePhoto profileCompletion skills experience education portfolioUrl resume isOnline lastSeen');
@@ -168,6 +186,10 @@ exports.updateApplicationStatus = async (req, res) => {
       return res.status(400).json({ message: 'Invalid status. Must be one of: ' + VALID_STATUSES.join(', ') });
     }
 
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
     const application = await Application.findById(req.params.id);
     if (!application) return res.status(404).json({ message: 'Application not found' });
 
@@ -177,6 +199,10 @@ exports.updateApplicationStatus = async (req, res) => {
     // Single-admin model: the recruiter manages everything
     if (req.user.role !== 'recruiter') {
       return res.status(403).json({ message: 'Not authorized to update this application' });
+    }
+
+    if (interviewLink && !/^https?:\/\//i.test(String(interviewLink))) {
+      return res.status(400).json({ message: 'Interview link must start with http:// or https://' });
     }
 
     application.status = status;
@@ -226,6 +252,9 @@ exports.updateApplicationStatus = async (req, res) => {
 // ---------- Candidate: withdraw ----------
 exports.withdrawApplication = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
     const application = await Application.findOne({
       _id: req.params.id,
       candidateId: req.user._id
@@ -326,6 +355,9 @@ exports.getRecruiterStats = async (req, res) => {
 // ---------- Recruiter: full candidate profile + cross-job history ----------
 exports.getCandidateProfile = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.candidateId)) {
+      return res.status(404).json({ message: 'Candidate not found' });
+    }
     const candidate = await User.findById(req.params.candidateId).select(
       'name email phone profilePhoto profileCompletion skills experience education portfolioUrl resume resumeText isOnline lastSeen createdAt'
     );

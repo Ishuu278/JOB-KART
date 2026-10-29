@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Company = require('../models/Company');
 const Job = require('../models/Job');
+const User = require('../models/User');
 
 exports.getCompanyNames = async (req, res) => {
   try {
@@ -37,6 +38,9 @@ exports.getCompanyById = async (req, res) => {
 
 exports.getCompanyJobs = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'Company not found' });
+    }
     const jobs = await Job.find({ companyId: req.params.id, status: 'active' });
     res.json(jobs);
   } catch (error) {
@@ -46,12 +50,15 @@ exports.getCompanyJobs = async (req, res) => {
 
 exports.followCompany = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'Company not found' });
+    }
     const company = await Company.findById(req.params.id);
     if (!company) {
       return res.status(404).json({ message: 'Company not found' });
     }
 
-    const index = company.followers.indexOf(req.user._id);
+    const index = (company.followers || []).findIndex(id => String(id) === String(req.user._id));
     if (index === -1) {
       company.followers.push(req.user._id);
     } else {
@@ -67,7 +74,12 @@ exports.followCompany = async (req, res) => {
 
 exports.createCompany = async (req, res) => {
   try {
+    if (req.user.companyId) {
+      return res.status(400).json({ message: 'This recruiter account is already linked to a company' });
+    }
+
     const company = await Company.create(req.body);
+    await User.findByIdAndUpdate(req.user._id, { companyId: company._id });
     res.status(201).json(company);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -76,6 +88,13 @@ exports.createCompany = async (req, res) => {
 
 exports.updateCompany = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'Company not found' });
+    }
+    if (!req.user.companyId || String(req.user.companyId) !== String(req.params.id)) {
+      return res.status(403).json({ message: 'You can only update your own company profile' });
+    }
+
     const company = await Company.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!company) {
       return res.status(404).json({ message: 'Company not found' });

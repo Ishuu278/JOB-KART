@@ -7,7 +7,7 @@ const email = process.argv[2] || 'aisha@demo.com';
 (async () => {
   const res = await fetch(B + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: 'demo123' }) });
   const user = await res.json();
-  const sock = io(B, { transports: ['websocket'] });
+  const sock = io(B, { transports: ['websocket'], auth: { token: user.token } });
   sock.on('connect', () => {
     sock.emit('join', user._id);
     console.log('ONLINE_SIM: joined as', user.email, user._id);
